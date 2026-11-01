@@ -33,7 +33,7 @@ Nhận diện tức thời tên kênh, mắt xem thật, tiếng mõ tự độn
 - Audio: Web Audio API & AudioContext Mixer (tổng hợp chuông khánh, mõ gia trì)
 
 🔗 ĐỌC BÀI VIẾT CHI TIẾT & XEM DEMO:
-👉 Bài viết trên Web: https://longnh.com/vibe-coding/livestream-chua-online-tiktok-3d
+👉 Bài viết trên Web: https://longnh.com/vibe-coding-chua-dang-huong-online-tiktok-3d/
 👉 Trải nghiệm Demo Trực Tiếp: https://longnh.com/demo/tiktok-pagoda-live
 👉 Fork Mã Nguồn Mở GitHub: https://github.com/longhsiaaa/tiktok-pagoda-live
 
