@@ -210,13 +210,7 @@ body.studio-body {
    HÀNG BỒ ĐOÀN VIP THƯỢNG ĐIỆN & THẢM CHÍNH ĐẠO
    ======================================================== */
 .vip-terrace-row {
-  position: absolute;
-  top: 54.5%;
-  left: 12px;
-  right: 12px;
-  display: flex;
-  justify-content: space-around;
-  z-index: 10;
+  display: none !important; /* Loại bỏ hàng 6 ô chữ nhật tĩnh thô kệch che bàn thờ */
 }
 
 .vip-seat-slot {
@@ -321,60 +315,124 @@ body.studio-body {
   opacity: 0.35;
 }
 
-/* ĐÁM ĐÔNG ĐẠI ĐẠO TRÀNG PHẬT TỬ (SỨC CHỨA TỐI ĐA 800 NGƯỜI) */
+/* ĐÁM ĐÔNG ĐẠI ĐẠO TRÀNG PHẬT TỬ THEO LƯỚI TỔ ONG (HEXAGONAL STAGGERED GRID) - KHÔNG VIỀN Ô */
 .congregation-grid {
   position: absolute;
-  top: 52%;
-  bottom: 85px;
-  left: 6px;
-  right: 6px;
-  display: flex;
-  justify-content: space-between;
-  z-index: 6;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
+  z-index: 6;
   overflow: hidden;
 }
 
-.congregation-side {
-  width: 42%;
-  height: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 5px 3px;
-  overflow-y: auto;
-  scrollbar-width: none;
-  padding-bottom: 25px;
-}
-
-.congregation-side::-webkit-scrollbar {
-  display: none;
-}
-
-.pilgrim-figure-slot {
+.hex-devotee-slot {
+  position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  transform-origin: bottom center;
+  transition: opacity 0.4s ease, transform 0.3s ease;
+  pointer-events: none;
 }
 
-.pilgrim-figure-slot.fade-in {
-  animation: devoteeSlotFadeIn 0.5s ease forwards;
+.hex-devotee-slot.fade-in {
+  animation: hexDevoteeFadeIn 0.5s ease forwards;
 }
 
-.pilgrim-figure-slot.fade-out {
-  animation: devoteeSlotFadeOut 0.5s ease forwards;
+.hex-devotee-slot.fade-out {
+  animation: hexDevoteeFadeOut 0.4s ease forwards;
 }
 
-@keyframes devoteeSlotFadeIn {
-  from { opacity: 0; transform: scale(0.7) translateY(8px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+@keyframes hexDevoteeFadeIn {
+  from { opacity: 0; transform: scale(0.6) translateY(12px); }
+  to { opacity: 1; transform: scale(var(--hex-scale, 1)) translateY(0); }
 }
 
-@keyframes devoteeSlotFadeOut {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: scale(0.6) translateY(-8px); }
+@keyframes hexDevoteeFadeOut {
+  from { opacity: 1; transform: scale(var(--hex-scale, 1)); }
+  to { opacity: 0; transform: scale(0.5) translateY(-10px); }
+}
+
+/* Thí chủ VIP cúng dường / Top Thí Chủ có vương miện hoàng kim */
+.hex-devotee-slot.is-vip::before {
+  content: '👑';
+  position: absolute;
+  top: -15px;
+  font-size: 13px;
+  filter: drop-shadow(0 0 6px #ffd700);
+  animation: crownBob 2s infinite ease-in-out;
+  z-index: 8;
+}
+
+/* Sprite 3D Phật Tử Nam / Nữ theo từng bộ trang phục thực tế */
+.hex-devotee-sprite {
+  height: 42px;
+  width: auto;
+  max-width: 44px;
+  object-fit: contain;
+  margin-bottom: -9px;
+  z-index: 2;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.88));
+  will-change: transform;
+  pointer-events: none;
+  animation: pilgrimBreathe 3.6s ease-in-out infinite;
+  transition: transform 0.22s ease;
+}
+
+.hex-devotee-sprite.is-bowing-prostrate {
+  animation-play-state: paused;
+  transform: translateY(6px) scaleY(0.55) scaleX(1.18);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.95));
+}
+
+.hex-devotee-sprite.is-bowing-mid {
+  animation-play-state: paused;
+  transform: translateY(3px) scaleY(0.78) scaleX(1.08);
+}
+
+/* Bồ đoàn đệm ngồi mỏng elip nhỏ gọn xinh xắn dưới mông */
+.hex-cushion {
+  width: 32px;
+  height: 10px;
+  background: radial-gradient(ellipse at center, #7a3118 0%, #421808 100%);
+  border-radius: 50%;
+  border: 1px solid rgba(207, 166, 53, 0.6);
+  margin-top: -6px;
+  z-index: 1;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.85);
+}
+
+.hex-devotee-slot.is-vip .hex-cushion {
+  border-color: #ffd700;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
+}
+
+/* Thẻ tên Phật tử gọn gàng, chữ vàng dịu mắt */
+.hex-name-tag {
+  font-size: 7px;
+  color: #e0d8b0;
+  background: rgba(15, 7, 3, 0.85);
+  border: 0.5px solid rgba(255, 215, 0, 0.25);
+  padding: 0 3px;
+  border-radius: 3px;
+  white-space: nowrap;
+  max-width: 52px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.hex-devotee-slot.is-vip .hex-name-tag {
+  color: #ffd700;
+  border-color: rgba(255, 215, 0, 0.6);
+  background: rgba(25, 10, 4, 0.92);
+  font-weight: bold;
 }
 
 /* HUY HIỆU AVATAR TIKTOKER TRÊN ĐẦU PHẬT TỬ */

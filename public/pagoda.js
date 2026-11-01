@@ -300,67 +300,48 @@
    * Cúi lạy hoặc dập đầu Ngũ Thể Đầu Địa bằng việc đổi frame sprite 3D chân thực
    * Không dùng co kéo scale dọc gây méo mó hình
    */
+  /**
+   * Cúi lạy hoặc dập đầu Ngũ Thể Đầu Địa bằng hiệu ứng giải phẫu học mượt mà
+   * Bảo toàn 100% màu áo và kiểu tóc đặc trưng của từng Cư sĩ Nam / Nữ
+   */
   function bowDevotee(img, delayMs = 0, isDeep = true) {
     if (!img || img._isBowing) return;
     img._isBowing = true;
 
     setTimeout(() => {
-      img.classList.add('is-bowing');
-      img.src = SPRITE_FRAMES.forehead;
+      img.classList.add('is-bowing-mid');
 
       setTimeout(() => {
-        img.src = SPRITE_FRAMES.bowMid;
-      }, 160);
+        if (isDeep) {
+          // Lạy dập đầu Ngũ Thể Đầu Địa sát đệm
+          img.classList.remove('is-bowing-mid');
+          img.classList.add('is-bowing-prostrate');
 
-      if (isDeep) {
-        // Lạy dập đầu Ngũ Thể Đầu Địa (trán, 2 bàn tay, 2 đầu gối chạm đất)
-        setTimeout(() => {
-          img.src = SPRITE_FRAMES.prostrateDeep;
-        }, 360);
+          setTimeout(() => {
+            img.classList.remove('is-bowing-prostrate');
+            img.classList.add('is-bowing-mid');
 
-        setTimeout(() => {
-          img.src = SPRITE_FRAMES.bowMid;
-        }, 850);
-
-        setTimeout(() => {
-          img.src = SPRITE_FRAMES.forehead;
-        }, 1100);
-
-        setTimeout(() => {
-          img.src = SPRITE_FRAMES.kneel;
-          img.classList.remove('is-bowing');
-          img._isBowing = false;
-        }, 1300);
-      } else {
-        // Cúi gập đầu niệm Phật trang nghiêm
-        setTimeout(() => {
-          img.src = SPRITE_FRAMES.forehead;
-        }, 580);
-
-        setTimeout(() => {
-          img.src = SPRITE_FRAMES.kneel;
-          img.classList.remove('is-bowing');
-          img._isBowing = false;
-        }, 880);
-      }
+            setTimeout(() => {
+              img.classList.remove('is-bowing-mid');
+              img._isBowing = false;
+            }, 280);
+          }, 600);
+        } else {
+          // Cúi đầu niệm Phật trang nghiêm
+          setTimeout(() => {
+            img.classList.remove('is-bowing-mid');
+            img._isBowing = false;
+          }, 420);
+        }
+      }, 180);
     }, delayMs);
   }
 
-  // Đợt sóng cúi lạy của hội chúng hai bên và hàng VIP
+  // Đợt sóng cúi lạy của toàn bộ đại chúng trong đạo tràng
   function triggerCongregationWave() {
-    // 1. Hàng VIP Thượng Điện cúi lạy trang nghiêm
-    const vipSprites = document.querySelectorAll('.vip-devotee-sprite');
-    vipSprites.forEach((img, idx) => {
-      const delay = (idx % 3) * 90;
-      bowDevotee(img, delay, true);
-    });
-
-    // 2. Hai bên đạo tràng lan toả đợt sóng lạy theo hàng
-    const devotees = document.querySelectorAll('.congregation-devotee-sprite');
+    const devotees = document.querySelectorAll('.hex-devotee-sprite');
     devotees.forEach((img, idx) => {
-      const row = Math.floor(idx / 3);
-      const col = idx % 3;
-      const delay = (row * 85) + (col * 30) + Math.floor(Math.random() * 40);
+      const delay = (idx % 6) * 90 + Math.floor(Math.random() * 60);
       bowDevotee(img, delay, true);
     });
   }
@@ -370,7 +351,7 @@
   function startIdleDevotionLoop() {
     if (idleDevotionInterval) clearInterval(idleDevotionInterval);
     idleDevotionInterval = setInterval(() => {
-      const allSprites = Array.from(document.querySelectorAll('.congregation-devotee-sprite, .vip-devotee-sprite'));
+      const allSprites = Array.from(document.querySelectorAll('.hex-devotee-sprite'));
       if (allSprites.length === 0) return;
 
       const candidates = allSprites.filter(img => !img._isBowing);
@@ -381,7 +362,7 @@
         const randIdx = Math.floor(Math.random() * candidates.length);
         const chosen = candidates.splice(randIdx, 1)[0];
         if (chosen) {
-          const delay = Math.floor(Math.random() * 400);
+          const delay = Math.floor(Math.random() * 350);
           const isDeep = Math.random() > 0.45;
           bowDevotee(chosen, delay, isDeep);
         }
@@ -390,58 +371,43 @@
   }
 
   // ========================================================
-  // 2. RENDER ĐÁM ĐÔNG PHẬT TỬ & HÀNG VIP THƯỢNG ĐIỆN
+  // 2. RENDER HÀNG GHẾ VIP & CẬP NHẬT TOP CÔNG ĐỨC
+  // Không vẽ các ô chữ nhật tĩnh thô kệch che bàn thờ
   // ========================================================
-  let currentVipDonors = [
-    { name: 'Tiến Trương', coins: 5043, rank: 'Cấp 5', isChamp: true },
-    { name: 'Anh Thơ 1227', coins: 833, rank: 'Cấp 4', isChamp: false },
-    { name: 'tao nồng ảnh...', coins: 550, rank: 'Cấp 4', isChamp: false },
-    { name: 'Nguyễn Đăng k...', coins: 356, rank: 'Cấp 3', isChamp: false },
-    { name: 'Lương nhi', coins: 280, rank: 'Cấp 3', isChamp: false },
-    { name: 'Tha choco', coins: 210, rank: 'Cấp 2', isChamp: false }
-  ];
+  let currentVipDonors = [];
 
   function renderVipTerrace(dynamicList) {
-    if (!vipTerraceRow) return;
     if (dynamicList && Array.isArray(dynamicList)) {
       currentVipDonors = dynamicList;
     }
-    vipTerraceRow.innerHTML = '';
+    // Gỡ bỏ class VIP cũ
+    document.querySelectorAll('.hex-devotee-slot.is-vip').forEach(el => el.classList.remove('is-vip'));
 
-    for (let idx = 0; idx < 6; idx++) {
-      const d = currentVipDonors[idx];
-      const slot = document.createElement('div');
-      const isChamp = idx === 0 && d && d.coins > 0;
-      slot.className = `vip-seat-slot ${isChamp ? 'top-champion' : ''}`;
-      slot.id = `vip-seat-${idx}`;
-      const delay = (Math.random() * 3.5).toFixed(2);
-      const dur = (3.2 + Math.random() * 1.2).toFixed(2);
-      const breatheHeight = (-(1.4 + Math.random() * 0.8)).toFixed(1);
-
-      const displayName = d ? d.name : `Bồ đoàn ${idx + 1}`;
-      const tagText = d && d.coins > 0 ? `${escapeHtml(displayName)}` : escapeHtml(displayName);
-
-      slot.innerHTML = `
-        <img class="vip-devotee-sprite" id="vip-devotee-${idx}" src="${SPRITE_FRAMES.kneel}" alt="VIP" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px" />
-        <div class="vip-pillow"></div>
-        <span class="vip-name-tag">${tagText}</span>
-      `;
-      vipTerraceRow.appendChild(slot);
+    // Gán vương miện hoàng kim 👑 cho các vị trí Top Thí Chủ trong Đạo Tràng Tổ Ong
+    if (currentVipDonors && currentVipDonors.length > 0) {
+      currentVipDonors.slice(0, 4).forEach(d => {
+        if (d && d.name && d.coins > 0) {
+          const devotee = getOrCreateRealDevotee(d.userId || d.name, d.name, d.avatar || '');
+          if (devotee && devotee.element) {
+            devotee.element.classList.add('is-vip');
+          }
+        }
+      });
     }
   }
 
   // ========================================================
-  // 2. HỆ THỐNG PHẬT TỬ THẬT & ĐẶC TÍNH NFT TRANG PHỤC ĐỘC BẢN
-  // SỨC CHỨA TỐI ĐA 800 NGƯỜI (CƠ CHẾ HÀNG ĐỢI FIFO)
+  // 3. ĐẠO TRÀNG LƯỚI TỔ ONG (HEXAGONAL STAGGERED GRID)
+  // KHÔNG HIỆN VIỀN Ô KHI TRỐNG - NGỒI RANDOM Ô KHÔNG ĐÈ NHAU
+  // ĐA DẠNG HÓA GIỚI TÍNH (NAM/NỮ) VÀ 6 BỘ TRANG PHỤC THỰC TẾ
   // ========================================================
   const NFT_OUTFITS = [
-    { id: 'lam_truyen_thong', name: 'Áo Lam Cư Sĩ', cls: 'nft-outfit-lam_truyen_thong', badge: '🪷' },
-    { id: 'nau_song', name: 'Áo Nâu Sồng', cls: 'nft-outfit-nau_song', badge: '🪵' },
-    { id: 'ngoc_bich', name: 'Áo Lam Ngọc Bích', cls: 'nft-outfit-ngoc_bich', badge: '💎' },
-    { id: 'vang_sa_mon', name: 'Áo Tràng Sa Môn', cls: 'nft-outfit-vang_sa_mon', badge: '📿' },
-    { id: 'trang_tinh_do', name: 'Bạch Y Tịnh Độ', cls: 'nft-outfit-trang_tinh_do', badge: '✨' },
-    { id: 'xam_khoi', name: 'Áo Thiền Xám Khói', cls: 'nft-outfit-xam_khoi', badge: '☁️' },
-    { id: 'hoang_kim', name: 'Gấm Vàng Hoàng Kim', cls: 'nft-outfit-hoang_kim', badge: '👑' }
+    { id: 'lam', name: 'Áo Lam Cư Sĩ', badge: '🪷' },
+    { id: 'nau', name: 'Áo Nâu Sồng', badge: '🪵' },
+    { id: 'vang', name: 'Áo Tràng Sa Môn', badge: '📿' },
+    { id: 'trang', name: 'Bạch Y Tịnh Độ', badge: '✨' },
+    { id: 'ngoc', name: 'Áo Lam Ngọc Bích', badge: '💎' },
+    { id: 'hoang_kim', name: 'Gấm Vàng Hoàng Kim', badge: '👑' }
   ];
 
   const NFT_ACCESSORIES = [
@@ -465,46 +431,89 @@
 
   function generateDevoteeTraits(uniqueKey) {
     const hash = hashString(uniqueKey || 'phat_tu');
-    const gender = (hash % 2 === 0) ? 'Nữ' : 'Nam';
+    const isMale = (hash % 2 === 1);
+    const genderKey = isMale ? 'male' : 'female';
+    const gender = isMale ? 'Cư sĩ Nam' : 'Cư sĩ Nữ';
     const outfit = NFT_OUTFITS[hash % NFT_OUTFITS.length];
     const accessory = NFT_ACCESSORIES[(hash >> 3) % NFT_ACCESSORIES.length];
+    const spriteSrc = `${ASSETS_PATH}devotee_${genderKey}_${outfit.id}.png`;
+
     return {
       gender,
+      genderKey,
       outfit,
       accessory,
+      spriteSrc,
       rankTitle: `Cấp ${(hash % 5) + 1}`
     };
   }
 
+  const allHexSeats = [];
+  const TOTAL_HEX_ROWS = 8;
+
+  function initHexagonalGrid() {
+    allHexSeats.length = 0;
+    const yStart = 53.0; // Phía trước bàn thờ
+    const yEnd = 85.5;   // Phía trên banner đáy
+    const yStep = (yEnd - yStart) / (TOTAL_HEX_ROWS - 1);
+
+    for (let r = 0; r < TOTAL_HEX_ROWS; r++) {
+      const y = yStart + r * yStep;
+      const scale = Number((0.74 + (r / (TOTAL_HEX_ROWS - 1)) * 0.32).toFixed(3));
+      const zIndex = 10 + r * 2;
+      const isEven = (r % 2 === 0);
+
+      // Cánh Tả (Bên Trái thảm đỏ): X từ 4.5% đến 37%
+      const leftXs = isEven ? [4.5, 12.5, 20.5, 28.5, 36.5] : [8.5, 16.5, 24.5, 32.5];
+      leftXs.forEach((x, c) => {
+        allHexSeats.push({
+          id: `hex-L-r${r}-c${c}`,
+          side: 'L',
+          row: r,
+          col: c,
+          x,
+          y: Number(y.toFixed(2)),
+          scale,
+          zIndex,
+          occupied: false,
+          devoteeId: null
+        });
+      });
+
+      // Cánh Hữu (Bên Phải thảm đỏ): X từ 63% đến 95.5%
+      const rightXs = isEven ? [63.5, 71.5, 79.5, 87.5, 95.5] : [67.5, 75.5, 83.5, 91.5];
+      rightXs.forEach((x, c) => {
+        allHexSeats.push({
+          id: `hex-R-r${r}-c${c}`,
+          side: 'R',
+          row: r,
+          col: c,
+          x,
+          y: Number(y.toFixed(2)),
+          scale,
+          zIndex,
+          occupied: false,
+          devoteeId: null
+        });
+      });
+    }
+  }
+
   const MAX_DISPLAY_DEVOTEES = 800; // Tối đa 800 Phật tử thật
   const realDevoteeMap = new Map(); // key: cleanUserId -> DevoteeObj
-  const realDevoteeOrder = []; // FIFO array: Người vào trước sẽ tạm ẩn cho người vào sau nếu > 800
-  let sideToggle = false;
-
-  let leftSideContainer = null;
-  let rightSideContainer = null;
+  const realDevoteeOrder = []; // FIFO array
 
   function renderCongregation() {
     if (!congregationGrid) return;
     congregationGrid.innerHTML = '';
-
-    leftSideContainer = document.createElement('div');
-    leftSideContainer.className = 'congregation-side side-left';
-    leftSideContainer.id = 'congregationSideLeft';
-
-    rightSideContainer = document.createElement('div');
-    rightSideContainer.className = 'congregation-side side-right';
-    rightSideContainer.id = 'congregationSideRight';
-
-    congregationGrid.appendChild(leftSideContainer);
-    congregationGrid.appendChild(rightSideContainer);
-
-    // Không sinh phật tử giả. Sân khấu sẵn sàng chào đón các Phật tử thật khi kết nối!
+    initHexagonalGrid();
+    realDevoteeMap.clear();
+    realDevoteeOrder.length = 0;
   }
 
   /**
-   * Đăng ký hoặc lấy vị trí bồ đoàn của Phật tử THẬT trên đạo tràng
-   * Áp dụng NFT Trait Generator & Hàng đợi FIFO tối đa 800 người
+   * Đăng ký hoặc lấy vị trí bồ đoàn của Phật tử THẬT trong Lưới Tổ Ong
+   * Ngồi random ô trống, tuyệt đối không đè lên nhau
    */
   function getOrCreateRealDevotee(userId, name, avatar = '') {
     if (!userId) userId = name || 'an_danh';
@@ -526,37 +535,57 @@
       return existing;
     }
 
-    // Nếu đã chạm mốc 800 Phật tử: Gỡ người vào trước nhất ra khỏi sân khấu (FIFO)
-    if (realDevoteeOrder.length >= MAX_DISPLAY_DEVOTEES) {
+    if (allHexSeats.length === 0) {
+      initHexagonalGrid();
+    }
+
+    // 1. Tìm ô trống trong lưới tổ ong
+    const emptySeats = allHexSeats.filter(s => !s.occupied);
+    let assignedSeat = null;
+
+    if (emptySeats.length > 0) {
+      // Chọn RANDOM ô trống trong các ô tổ ong chưa có người ngồi
+      const randIdx = Math.floor(Math.random() * emptySeats.length);
+      assignedSeat = emptySeats[randIdx];
+    } else {
+      // Nếu đã kín hết các ô tổ ong: FIFO gỡ người vào sớm nhất
       const oldestId = realDevoteeOrder.shift();
-      const oldestDevotee = realDevoteeMap.get(oldestId);
-      if (oldestDevotee) {
-        const oldEl = document.getElementById(oldestDevotee.slotId);
-        if (oldEl) {
-          oldEl.classList.add('fade-out');
-          setTimeout(() => { if (oldEl.parentNode) oldEl.remove(); }, 400);
+      const oldest = realDevoteeMap.get(oldestId);
+      if (oldest && oldest.seat) {
+        assignedSeat = oldest.seat;
+        assignedSeat.occupied = false;
+        assignedSeat.devoteeId = null;
+        if (oldest.element) {
+          oldest.element.classList.add('fade-out');
+          setTimeout(() => { if (oldest.element && oldest.element.parentNode) oldest.element.remove(); }, 380);
         }
         realDevoteeMap.delete(oldestId);
       }
     }
 
-    if (!leftSideContainer || !rightSideContainer) {
-      renderCongregation();
+    if (!assignedSeat) {
+      assignedSeat = allHexSeats[Math.floor(Math.random() * allHexSeats.length)];
     }
+
+    assignedSeat.occupied = true;
+    assignedSeat.devoteeId = cleanId;
 
     const traits = generateDevoteeTraits(cleanId);
     const slotId = `devotee-slot-${cleanId}`;
-    const targetSide = sideToggle ? rightSideContainer : leftSideContainer;
-    sideToggle = !sideToggle;
+
+    const slot = document.createElement('div');
+    slot.className = 'hex-devotee-slot fade-in';
+    slot.id = slotId;
+    slot.setAttribute('data-userid', cleanId);
+    slot.style.left = `${assignedSeat.x}%`;
+    slot.style.top = `${assignedSeat.y}%`;
+    slot.style.zIndex = assignedSeat.zIndex;
+    slot.style.setProperty('--hex-scale', assignedSeat.scale);
+    slot.style.transform = `scale(${assignedSeat.scale})`;
 
     const delay = (Math.random() * 3.5).toFixed(2);
     const dur = (3.0 + Math.random() * 1.2).toFixed(2);
     const breatheHeight = (-(1.2 + Math.random() * 0.8)).toFixed(1);
-
-    const slot = document.createElement('div');
-    slot.className = 'pilgrim-figure-slot fade-in';
-    slot.id = slotId;
-    slot.setAttribute('data-userid', cleanId);
 
     const avatarMarkup = avatar 
       ? `<div class="devotee-avatar-badge" title="${escapeHtml(name)}"><img src="${escapeHtml(avatar)}" onerror="this.parentNode.innerHTML='${traits.accessory.icon}'" alt="" /></div>`
@@ -564,15 +593,15 @@
 
     slot.innerHTML = `
       ${avatarMarkup}
-      <img class="congregation-devotee-sprite ${traits.outfit.cls}" src="${SPRITE_FRAMES.kneel}" alt="${escapeHtml(name)}" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px" />
-      <div class="regular-cushion"></div>
-      <span class="regular-name-tag nft-name-tag" title="${escapeHtml(name)} (${traits.outfit.name})">
+      <img class="hex-devotee-sprite" id="sprite-${cleanId}" src="${traits.spriteSrc}" alt="${escapeHtml(name)}" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px" />
+      <div class="hex-cushion"></div>
+      <span class="hex-name-tag" title="${escapeHtml(name)} (${traits.gender} • ${traits.outfit.name})">
         <span class="nft-accessory-icon">${traits.outfit.badge}</span>
         <span class="user-display-name">${escapeHtml(name)}</span>
       </span>
     `;
 
-    targetSide.appendChild(slot);
+    congregationGrid.appendChild(slot);
 
     const devotee = {
       userId: cleanId,
@@ -580,6 +609,7 @@
       avatar,
       traits,
       slotId,
+      seat: assignedSeat,
       element: slot,
       joinedAt: Date.now(),
       lastActive: Date.now()
@@ -592,7 +622,7 @@
   }
 
   // ========================================================
-  // 3. HIỂN THỊ BONG BÓNG LỜI KHẤN THỜI GIAN THỰC (NEO CHÍNH XÁC VÀO ĐẦU PHẬT TỬ)
+  // 4. HIỂN THỊ BONG BÓNG LỜI KHẤN THỜI GIAN THỰC (NEO CHÍNH XÁC VÀO ĐẦU PHẬT TỬ)
   // ========================================================
   function showPrayerBubble(text, seatElement, avatar = '', sender = '', userId = '') {
     if (!streamFrame || !streamSpeechLayer || !text) return;
@@ -612,7 +642,7 @@
         if (centralWorshipper && Math.random() < 0.3) {
           seatElement = centralWorshipper;
         } else {
-          const allSlots = document.querySelectorAll('.pilgrim-figure-slot, .vip-seat-slot');
+          const allSlots = document.querySelectorAll('.hex-devotee-slot');
           if (allSlots.length > 0) {
             seatElement = allSlots[Math.floor(Math.random() * allSlots.length)];
           }
@@ -622,7 +652,7 @@
     if (!seatElement) return;
 
     // Kích hoạt Phật tử này cúi đầu niệm Phật cùng lúc khi chat
-    const spriteImg = seatElement.querySelector('.congregation-devotee-sprite');
+    const spriteImg = seatElement.querySelector('.hex-devotee-sprite');
     if (spriteImg) {
       bowDevotee(spriteImg, 0, false);
     }

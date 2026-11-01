@@ -639,7 +639,7 @@ async function connectTikTok(uniqueId) {
     const conn = new TikTokLiveConnection(cleanUser, {
       processInitialData: false,
       fetchRoomInfoOnConnect: false,
-      enableExtendedGiftInfo: false
+      enableExtendedGiftInfo: true
     });
 
     conn.on(ControlEvent.CONNECTED, state => {
@@ -729,26 +729,44 @@ async function connectTikTok(uniqueId) {
       broadcastStatsSync();
     });
 
+    // Bộ theo dõi combo streak quà tặng để cộng dồn xu ngay lập tức, không bị nuốt quà
+    const giftStreakTracker = new Map();
+
     // Sự kiện: Viewer gửi quà tặng (Gift)
     conn.on(WebcastEvent.GIFT, data => {
-      const type = data.giftDetails?.giftType ?? data.extendedGiftInfo?.type ?? data.giftType;
-      // Nếu là combo streak (type = 1) mà chưa kết thúc streak, bỏ qua để chờ chốt tổng
-      if (type === 1 && !data.repeatEnd) return;
-
       const { uniqueId, name, avatar } = extractUserFromEvent(data);
       const userId = `tt_${uniqueId}`;
-      const giftName = data.giftDetails?.giftName || data.extendedGiftInfo?.name || data.giftName || 'Quà';
-      const diamonds = (data.giftDetails?.diamondCount ?? data.extendedGiftInfo?.diamond_count ?? data.diamondCount ?? 1) * (data.repeatCount || 1);
+      const giftId = String(data.giftId || data.giftDetails?.giftId || 'gift');
+      const giftName = data.giftDetails?.giftName || data.extendedGiftInfo?.name || data.giftName || 'Hoa Hồng';
+      const diamondUnit = Number(data.giftDetails?.diamondCount ?? data.extendedGiftInfo?.diamond_count ?? data.diamondCount ?? 1) || 1;
 
-      console.log(`[TIKTOK GIFT] 🎁 ${name} gửi ${giftName} x${data.repeatCount || 1} (Giá trị: ${diamonds} xu)`);
+      const streakKey = `${userId}_${giftId}`;
+      const currentRepeat = Number(data.repeatCount || 1);
+      const lastRepeat = giftStreakTracker.get(streakKey) || 0;
 
-      // Tăng hương nếu là quà hương (1-4 xu)
-      if (diamonds <= 4) {
-        sessionStats.totalIncense += 3;
+      let deltaCount = 1;
+      if (currentRepeat > lastRepeat) {
+        deltaCount = currentRepeat - lastRepeat;
+        giftStreakTracker.set(streakKey, currentRepeat);
+      } else {
+        deltaCount = 1;
       }
 
-      // Ghi nhận công đức và đồng bộ phiên Live
-      recordMerit(userId, name, diamonds, `Cúng dường ${giftName}`, avatar);
+      if (data.repeatEnd) {
+        giftStreakTracker.delete(streakKey);
+      }
+
+      const diamonds = Math.max(1, diamondUnit * deltaCount);
+
+      console.log(`[TIKTOK GIFT] 🎁 ${name} gửi ${giftName} x${deltaCount} (+${diamonds} xu) -> Tổng repeat: ${currentRepeat}`);
+
+      // Tăng số lượng nhang nếu là quà nhỏ (1-4 xu)
+      if (diamonds <= 4) {
+        sessionStats.totalIncense += Math.max(1, deltaCount);
+      }
+
+      // Ghi nhận công đức ngay lập tức và đồng bộ Sổ Công Đức cho toàn bộ người xem
+      recordMerit(userId, name, diamonds, `Cúng dường ${giftName} x${deltaCount}`, avatar);
 
       // Ánh xạ quà tặng theo giá trị xu TikTok vào các đại lễ Phật giáo
       if (diamonds >= 100) {

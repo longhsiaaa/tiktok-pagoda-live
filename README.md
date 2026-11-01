@@ -1,12 +1,14 @@
-# 🪷 TikTok Live Buddhist Pagoda Simulator (Chùa Dâng Hương Online)
+# 🪷 TikTok Live Buddhist Pagoda Simulator (Chùa Dâng Hương Online 3D)
 
-> **Hệ thống Livestream tương tác "Đi Chùa Dâng Hương Online" tự động 100% dành cho TikTok Live & OBS Studio, hỗ trợ chế độ Web Local nhận diện IP người xem.**  
-> *A 100% automated interactive Vietnamese Buddhist Temple Livestream Simulator for TikTok Live, OBS Studio & Web Browser with Local IP Visitor Identification.*
+> **Hệ thống Livestream tương tác "Đi Chùa Dâng Hương Online" tự động 100% dành cho TikTok Live & OBS Studio, hỗ trợ Đạo Tràng Tổ Ong 800 Phật tử thật, đồ đi lễ kiểu NFT Traits Nam/Nữ, giọng đọc AI VieNeu-TTS Nam chuẩn & Bảng điều khiển Live RPC.**  
+> *A 100% automated interactive Vietnamese Buddhist Temple Livestream Simulator for TikTok Live, OBS Studio & Web Browser with Hexagonal Staggered Devotees Grid, NFT Traits (Male/Female), VieNeu-TTS AI Voice & Live RPC Panel.*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
 [![TikTok Live Connector](https://img.shields.io/badge/TikTok-Connector-black.svg)](https://github.com/zerodytrash/TikTok-Live-Connector)
 [![Author](https://img.shields.io/badge/Author-LongNH-blue.svg)](https://longnh.com)
+
+![Chùa Dâng Hương Online 3D - Toàn cảnh Chánh Điện & Bảng Điều Khiển Live RPC](public/assets/live_preview.png)
 
 ---
 
@@ -16,18 +18,25 @@
 
 Dự án **Chùa Dâng Hương Online (`tiktok-pagoda-live`)** là giải pháp livestream tương tác thời gian thực mô phỏng không gian Chánh Điện Chùa Việt Nam thuần khiết và trang nghiêm. Hệ thống kết nối trực tiếp với phòng livestream TikTok thông qua `tiktok-live-connector`, đồng thời hỗ trợ **chế độ Web Standalone sử dụng IP của người truy cập làm danh xưng Phật tử**.
 
-Khán giả khi vào xem luồng livestream hoặc truy cập web sẽ được tự động xếp vào một trong **48 bồ đoàn** thiền định trong Chánh Điện, mang áo lam/áo tràng thanh tịnh, chắp tay niệm Phật. Khi bình luận, bong bóng thoại sẽ bay lên từ đúng chỗ người đó đang ngồi. Khi gửi quà tặng (gift), nhân vật sẽ đứng dậy bước theo lối Chính Đạo lên Tam Bảo dâng hương, lạy tam bái, dâng đóa sen hồng hoặc mâm ngũ quả.
+Khán giả khi vào xem luồng livestream hoặc truy cập web sẽ được tự động xếp vào **Đạo Tràng Lưới Tổ Ong (Hexagonal Staggered Grid)** lên tới **800 Phật tử thật** trong Chánh Điện. Mỗi người có giới tính Nam/Nữ và bộ trang phục Phật tử độc bản (Áo lam, Nâu sồng, Vàng Sa môn, Bạch y, Lam ngọc, Hoàng kim), quỳ thiền trang nghiêm. Khi bình luận, bong bóng thoại mọc chính xác trên đỉnh đầu nhân vật và nhân vật cúi đầu niệm Phật. Khi gửi quà tặng (gift), nhân vật sẽ đứng dậy bước theo lối Chính Đạo lên Tam Bảo dâng hương, lạy tam bái ngũ thể đầu địa, dâng đóa sen hồng hoặc mâm ngũ quả.
 
 ---
 
-### 2. Điểm Nổi Bật Của Hệ Thống
+### 2. Điểm Đột Phá Kỹ Thuật
 
-#### 2.1. Không Gian Chánh Điện 3D & 48 Bồ Đoàn Thiền Định
-- Bố cục Chánh Điện Tam Bảo uy nghiêm: Tượng Đức Bổn Sư Thích Ca Mâu Ni dát vàng trên Tòa Sen ngát hương, vòng hào quang động quay dịu êm.
-- Lư hương đồng tam khí với **hệ thống hạt khói trầm Canvas** uốn lượn như thật.
-- Chuông Đại Hồng Chung bên trái và Mõ Gia Trì bên phải có thể bấm gõ phát âm thanh trực tiếp.
-- **48 bồ đoàn** xếp thành 2 hàng dọc lối đi Chính Đạo trải thảm hoa sen.
-- **Top 5 Phật tử cúng dường nhiều nhất** được xếp ở hàng đầu tiên (Bồ đoàn Thượng thủ) với hiệu ứng sen vàng phát sáng rực rỡ.
+#### 2.1. Đạo Tràng Lưới Tổ Ong (Hexagonal Grid) - Không Hiện Viền Ô & Random Không Đè Nhau
+- **Lưới Tổ Ong So Le:** Bố trí theo cấu trúc tổ ong tự nhiên của các hàng ghế Phật tử, hàng chẵn và hàng lẻ so le nhau theo phối cảnh 3D có chiều sâu.
+- **Không Hiện Viền Ô Khi Trống:** Các ô chưa có người ngồi hoàn toàn tàng hình, giữ nguyên vẹn sàn gỗ bóng loáng và thảm đỏ của chùa, không vẽ các khung viền thô kệch.
+- **Ngồi Random Ô:** Người xem mới vào được chọn ngẫu nhiên vào các ô trống rải rác trong chùa, tạo cảm giác tự nhiên như một buổi lễ chùa thật.
+- **Không Đè Lên Nhau:** Mỗi vị trí có tọa độ cố định, tuyệt đối không bị dồn ứ hay chồng lấn lên nhau khi chưa đầy các ô.
+
+#### 2.2. Đa Dạng Hóa Giới Tính (Nam/Nữ) & 6 Bộ Trang Phục Thực Tế
+- **Cư sĩ Nam:** Tóc ngắn gọn gàng nam tính, vai vuông vức, lưng thẳng trang nghiêm.
+- **Cư sĩ Nữ:** Tóc búi sen cài trâm duyên dáng, thuần hậu thanh tịnh.
+- **6 Phong cách trang phục:** Áo Lam Cư Sĩ, Áo Nâu Sồng nhà thiền, Áo Tràng Sa Môn vàng nghệ, Bạch Y Tịnh Độ, Áo Lam Ngọc Bích, Gấm Vàng Hoàng Kim VIP.
+
+#### 2.3. Top Donate & Sổ Công Đức Cập Nhật Realtime Tức Thời
+- Hệ thống theo dõi streak combo quà tặng thông minh, ghi nhận chính xác từng hoa hồng (1 xu) đến các đại lễ quà lớn, liên tục cập nhật Top 1-4 trên Bảng Tấm Lòng Thành và HUD luồng live.
 
 #### 2.2. Chế Độ Kép: TikTok Live & Web Local (IP Visitor)
 1. **Chế độ TikTok Live:**
