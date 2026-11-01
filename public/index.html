@@ -3,178 +3,279 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lễ Chùa Dâng Hương Online 3D - Vạn Phúc Tự (TikTok Live & longnh.com)</title>
+  <title>Hệ Thống Livestream Chùa Online 3D & Điều Khiển RPC - longnh.com</title>
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <!-- Thư viện Three.js 3D WebGL Engine -->
-  <script src="libs/three.min.js"></script>
 </head>
-<body class="pagoda-body-3d">
-  <!-- Khung Canvas Three.js 3D toàn màn hình -->
-  <div id="webgl-container"></div>
+<body class="studio-body">
 
-  <!-- Lớp phủ 2D/UI Overlay trên nền 3D -->
-  <div class="overlay-container" id="overlayContainer">
+  <div class="studio-layout" id="studioLayout">
 
-    <!-- THANH HEADER TRÊN CÙNG: THÔNG TIN PHẬT TỬ & PHÒNG LIVE -->
-    <header class="top-nav-bar">
-      <div class="user-badge" id="userBadge">
-        <div class="user-avatar-circle">🧘‍♂️</div>
-        <div class="user-text-info">
-          <div class="user-name-line">
-            <span class="user-dharma-name" id="myDharmaName">Phật tử Diệu Tâm</span>
-            <span class="user-level-tag">Bậc 1 • Hạt Sen</span>
+    <!-- ========================================================
+         CỘT TRÁI: MÀN HÌNH LIVESTREAM TIKTOK (OBS OVERLAY 9:16)
+         ======================================================== -->
+    <main class="stream-viewport-pane">
+      <div class="stream-screen-frame" id="streamFrame">
+        
+        <!-- Hình nền Chánh Điện Tam Bảo Siêu Thực (Photorealistic Background) -->
+        <div class="temple-bg-layer" id="templeBgLayer"></div>
+
+        <!-- Canvas Hiệu Ứng Hạt: Khói Trầm Nghi Ngút & Mưa Hoa Sen -->
+        <canvas id="effectsCanvas" class="effects-canvas"></canvas>
+
+        <!-- THANH HEADER TRÊN CÙNG LUỒNG LIVE -->
+        <div class="live-stream-header">
+          <div class="live-status-pill">
+            <span class="live-dot"></span>
+            <span class="live-badge-text">LIVE <span id="streamTikTokName">@zenfacts_vn</span> • <span id="streamViewCount">128</span> mắt</span>
           </div>
-          <div class="temple-status-line">
-            <span class="temple-tag">🪷 Vạn Phúc Tự</span>
-            <span class="online-indicator">🟢 <span id="onlineCount">128</span> đang viếng chùa</span>
+          <div class="live-metrics-pill">
+            <span>🌾 <span id="totalIncenseCount">1.022</span> hương</span>
+            <span class="metric-divider">•</span>
+            <span>💎 <span id="totalCoinsCount">13.948</span> CĐ</span>
           </div>
         </div>
+
+        <!-- KHU VỰC TƯƠNG TÁC TRÊN BÀN THỜ TAM BẢO -->
+        <div class="altar-interact-zone">
+          <!-- Nút Thỉnh Chuông góc trái bàn thờ -->
+          <button class="altar-click-btn btn-thinh-chuong" id="btnClickBell" title="Bấm để Thỉnh Chuông">
+            <span class="btn-bubble-icon">🔔</span>
+            <span class="btn-bubble-text">Thỉnh Chuông</span>
+          </button>
+
+          <!-- Dòng chữ xướng quẻ xăm / sớ chạy marquee giữa bàn thờ -->
+          <div class="altar-marquee-box" id="altarMarqueeBox">
+            <span class="marquee-text" id="marqueeText">🎋 "Xin xăm: Quẻ số 1 Thượng Thượng Cát - Long Đức Chiếu Mệnh"</span>
+          </div>
+
+          <!-- Nút Gõ Mõ góc phải bàn thờ -->
+          <button class="altar-click-btn btn-go-mo" id="btnClickWoodblock" title="Bấm để Gõ Mõ Niệm Phật">
+            <span class="btn-bubble-icon">🪵</span>
+            <span class="btn-bubble-text">Gõ Mõ (<span id="woodblockHitCount">9.317</span>)</span>
+          </button>
+        </div>
+
+        <!-- HÀNG BỒ ĐOÀN VIP THƯỢNG ĐIỆN (NGỒI TRÊN BỆ GỖ BẬC TAM CẤP) -->
+        <div class="vip-terrace-row" id="vipTerraceRow">
+          <!-- Render tự động 6 chỗ ngồi VIP Thượng Thủ -->
+        </div>
+
+        <!-- THẢM ĐỎ CHÍNH ĐẠO TRẢI DÀI TRUNG TÂM -->
+        <div class="royal-carpet-aisle">
+          <div class="carpet-lotus-motif">🪷</div>
+          <div class="carpet-lotus-motif">🪷</div>
+          <div class="carpet-lotus-motif">🪷</div>
+          <div class="carpet-lotus-motif">🪷</div>
+          <div class="carpet-lotus-motif">🪷</div>
+        </div>
+
+        <!-- ĐÁM ĐÔNG PHẬT TỬ ÁO LAM NGỒI HAI BÊN THẢM CHÍNH ĐẠO -->
+        <div class="congregation-grid" id="congregationGrid">
+          <!-- Render tự động 32 Phật tử ngồi thiền hai bên -->
+        </div>
+
+        <!-- CONTAINER CHỨA TẤT CẢ BONG BÓNG LỜI KHẤN THỜI GIAN THỰC -->
+        <div class="stream-speech-layer" id="streamSpeechLayer"></div>
+
+        <!-- BANNER DƯỚI ĐÁY: TOP CÔNG ĐỨC & BẢNG VÀNG TẤM LÒNG THÀNH -->
+        <div class="stream-bottom-overlay">
+          <div class="bottom-donors-row">
+            <!-- Thẻ Vinh Danh Top 1 Công Đức -->
+            <div class="top-donor-card" id="topDonorCard">
+              <span class="donor-crown">👑</span>
+              <div class="donor-details">
+                <span class="donor-name" id="topDonorName">Tiến Trương</span>
+                <span class="donor-merit">Công đức: <strong id="topDonorCoins">5.043</strong> CĐ</span>
+              </div>
+            </div>
+
+            <!-- Bảng Vàng Tấm Lòng Thành (Top 4 Thí Chủ Cúng Dường) -->
+            <div class="merit-mini-board">
+              <div class="board-title">TẤM LÒNG THÀNH</div>
+              <ul class="board-donor-list" id="boardDonorList">
+                <li><span class="rank">①</span> <span class="d-name">Tiến Trương</span> <span class="d-coins">5.043</span></li>
+                <li><span class="rank">②</span> <span class="d-name">Anh Thơ 1227</span> <span class="d-coins">833</span></li>
+                <li><span class="rank">③</span> <span class="d-name">tao nồng ảnh...</span> <span class="d-coins">550</span></li>
+                <li><span class="rank">④</span> <span class="d-name">Nguyễn Đăng k...</span> <span class="d-coins">356</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- THANH HƯỚNG DẪN TẶNG QUÀ TIKTOK CHUẨN LIVE STREAM -->
+          <div class="live-gift-tabs-bar">
+            <div class="gift-tab">
+              <span class="tab-badge">1 COIN / CMT</span>
+              <span class="tab-action">🪔 Dâng hương</span>
+            </div>
+            <div class="gift-tab">
+              <span class="tab-badge">5 COINS / TIM</span>
+              <span class="tab-action">🙏 Cầu phúc</span>
+            </div>
+            <div class="gift-tab">
+              <span class="tab-badge">10+ COINS</span>
+              <span class="tab-action">🌸 Hoa sen</span>
+            </div>
+            <div class="gift-tab">
+              <span class="tab-badge">50+ COINS</span>
+              <span class="tab-action">🏮 Hoa đăng</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- ========================================================
+         CỘT PHẢI: BẢNG ĐIỀU KHIỂN LIVE & RPC (CHO STREAMER / HOST)
+         ======================================================== -->
+    <aside class="control-panel-pane">
+      
+      <!-- Tiêu Đề Bảng Điều Khiển -->
+      <div class="panel-main-header">
+        <div class="header-left">
+          <span class="panel-icon">🎛️</span>
+          <h2>Điều Khiển Live & RPC</h2>
+        </div>
+        <button class="obs-mode-btn" id="btnToggleObsMode" title="Chuyển chế độ Toàn Màn Hình cho OBS">
+          🖥️ Mở OBS Đầy Đủ ↗
+        </button>
       </div>
 
-      <!-- Nút điều khiển âm thanh & toàn màn hình góc phải -->
-      <div class="top-quick-actions">
-        <button class="top-btn" id="btnToggleSound" title="Bật/Tắt Âm Thanh">🔔 <span id="soundText">Bật Âm</span></button>
-        <button class="top-btn" id="btnCameraAngle" title="Đổi Góc Nhìn 3D (Sau Lưng / Toàn Cảnh)">🎥 Góc Nhìn</button>
-      </div>
-    </header>
+      <div class="panel-scroll-content">
 
-    <!-- MÀN HÌNH HUD HƯỚNG DẪN TẶNG QUÀ TIKTOK TRỰC QUAN (CHUẨN LIVE 9:16) -->
-    <aside class="live-hud-panel" id="liveHudPanel">
-      <div class="hud-header">
-        <span class="hud-icon">🪷</span>
-        <div class="hud-title-box">
-          <span class="hud-subtitle">CHÙA ONLINE 3D • LONGNH.COM</span>
-          <h2 class="hud-title">HƯỚNG DẪN DÂNG LỄ & GỬI TÂM NGUYỆN</h2>
+        <!-- 1. CỤM ÂM THANH CHÙA & GIỌNG ĐỌC KHẤN -->
+        <section class="panel-section">
+          <div class="section-title">
+            <span>🔊 ÂM THANH CHÙA & GIỌNG ĐỌC KHẤN</span>
+          </div>
+
+          <button class="master-sound-btn" id="btnMasterSound">
+            🔔 Bật Âm Thanh Chùa & Giọng Đọc
+          </button>
+
+          <div class="audio-toggle-row">
+            <button class="toggle-pill active" id="btnToggleVoice">🎙️ Giọng Đọc: BẬT</button>
+            <button class="toggle-pill active" id="btnToggleBgm">🎵 Nhạc Nền: BẬT</button>
+          </div>
+
+          <div class="slider-control-group">
+            <div class="slider-row">
+              <span class="slider-label">🎵 Âm lượng Nhạc nền</span>
+              <input type="range" id="bgmVolumeSlider" min="0" max="100" value="89">
+              <span class="slider-val" id="bgmValText">89%</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-label">🎙️ Âm lượng Giọng đọc</span>
+              <input type="range" id="voiceVolumeSlider" min="0" max="100" value="86">
+              <span class="slider-val" id="voiceValText">86%</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. CỤM KẾT NỐI PHÒNG TIKTOK LIVE -->
+        <section class="panel-section">
+          <div class="section-title">
+            <span>📡 KẾT NỐI PHÒNG TIKTOK LIVE</span>
+          </div>
+
+          <div class="tiktok-connect-box">
+            <input type="text" id="inputTikTokUser" value="@zenfacts_vn" placeholder="@kenh_tiktok_cua_ban">
+            <button class="connect-btn" id="btnConnectTikTok">Kết Nối</button>
+          </div>
+
+          <button class="sim-toggle-btn active" id="btnToggleSimulate">
+            📺 Tự động Giả lập Người Xem: BẬT
+          </button>
+        </section>
+
+        <!-- 3. CỤM KÍCH HOẠT NGHI THỨC TƯƠNG TÁC (RPC MANUAL TRIGGER) -->
+        <section class="panel-section">
+          <div class="section-title">
+            <span>🙏 KÍCH HOẠT NGHI THỨC TƯƠNG TÁC (RPC)</span>
+          </div>
+
+          <div class="rpc-input-group">
+            <input type="text" id="rpcSenderName" value="Quỳnh_Finn" placeholder="Tên người khấn..." maxlength="40">
+            <input type="text" id="rpcPrayerText" value="Cầu cho gia đình bình an, tài lộc hanh thông, vạn sự cát tường" placeholder="Lời khấn nguyện..." maxlength="120">
+          </div>
+
+          <!-- Lưới 8 nút bấm kích hoạt nghi lễ tức thời -->
+          <div class="rpc-actions-grid">
+            <button class="rpc-btn btn-gold" id="btnRpcIncense">
+              <span class="rpc-icon">🪔</span>
+              <span>Thắp 3 Nén Hương</span>
+            </button>
+            <button class="rpc-btn btn-orange" id="btnRpcLantern">
+              <span class="rpc-icon">🏮</span>
+              <span>Thả Đèn Hoa Đăng</span>
+            </button>
+            <button class="rpc-btn btn-brown" id="btnRpcWoodblock">
+              <span class="rpc-icon">🪵</span>
+              <span>Gõ Mõ (+5)</span>
+            </button>
+            <button class="rpc-btn btn-gold" id="btnRpcBell">
+              <span class="rpc-icon">🔔</span>
+              <span>Thỉnh Chuông Chùa</span>
+            </button>
+            <button class="rpc-btn btn-brown" id="btnRpcDivination">
+              <span class="rpc-icon">🎋</span>
+              <span>Xin Xăm / Gieo Quẻ</span>
+            </button>
+            <button class="rpc-btn btn-pink" id="btnRpcLotus">
+              <span class="rpc-icon">🌸</span>
+              <span>Dâng Hoa Sen Vàng</span>
+            </button>
+            <button class="rpc-btn btn-dragon" id="btnRpcDragon">
+              <span class="rpc-icon">🐉</span>
+              <span>Đại Lễ Kim Long Chầu Phật (Quà Lớn)</span>
+            </button>
+            <button class="rpc-btn btn-chant" id="btnRpcChant">
+              <span class="rpc-icon">🎙️</span>
+              <span>AI Đọc Sớ Cầu An</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 4. GHI CHÚ BẢN QUYỀN & HƯỚNG DẪN -->
+        <div class="panel-footer-info">
+          <span>Phát triển bởi <strong>LongNH</strong> • <a href="https://longnh.com" target="_blank">longnh.com</a></span>
+          <span class="hotkey-tip">💡 Phím tắt: <strong>Space/M</strong>: Gõ Mõ | <strong>B</strong>: Chuông | <strong>H</strong>: Ẩn/Hiện Panel</span>
         </div>
-      </div>
-      <div class="hud-grid">
-        <div class="hud-item">
-          <span class="gift-badge">🌹 1 Xu (Rose/Nến)</span>
-          <span class="action-desc">Thắp 1 nén nhang trầm + 1 tiếng chuông khánh</span>
-        </div>
-        <div class="hud-item">
-          <span class="gift-badge">🌸 5 Xu (Donut/Hoa)</span>
-          <span class="action-desc">Dâng đóa hoa sen hồng thanh tịnh lên đài sen</span>
-        </div>
-        <div class="hud-item">
-          <span class="gift-badge">🙏 10 Xu (Trái tim)</span>
-          <span class="action-desc">Phật tử đứng dậy tiến lên <strong>Lạy Tam Bái 3D</strong></span>
-        </div>
-        <div class="hud-item">
-          <span class="gift-badge">🍎 30 Xu (Mâm quả)</span>
-          <span class="action-desc">Dâng mâm ngũ quả & Ghi Sổ Công Đức Vàng</span>
-        </div>
-        <div class="hud-item hud-highlight">
-          <span class="gift-badge">🪷 100+ Xu (Đại Lễ)</span>
-          <span class="action-desc">Mưa hoa sen, hào quang tỏa sáng, AI đọc sớ</span>
-        </div>
-      </div>
-      <div class="hud-footer">
-        <span>💬 Gõ <strong>"A Di Đà Phật"</strong>: Niệm Phật hiển thị bong bóng thoại</span>
-        <span>🎋 Gõ <strong>"Xin que"</strong>: Rút quẻ xăm may mắn Quan Âm</span>
+
       </div>
     </aside>
 
-    <!-- CONTAINER CHỨA TẤT CẢ BONG BÓNG LỜI KHẤN & TÊN CHIẾU TỪ 3D RA MÀN HÌNH -->
-    <div id="speech-bubbles-layer" class="bubbles-layer"></div>
+  </div>
 
-    <!-- KHUNG ĐẾM TRÀNG HẠT 108 HẠT (KHI BẤM NÚT TRÀNG HẠT) -->
-    <div class="beads-counter-widget" id="beadsWidget">
-      <div class="beads-ring">📿</div>
-      <div class="beads-info">
-        <span class="beads-label">LẦN CHUỖI NIỆM PHẬT</span>
-        <div class="beads-number"><span id="currentBead">0</span> / 108 hạt</div>
+  <!-- MODAL QUẺ XĂM PHẬT BÀ QUAN ÂM -->
+  <div class="fortune-modal" id="fortuneModal">
+    <div class="modal-card">
+      <button class="modal-close-btn" id="closeFortuneBtn">✕</button>
+      <div class="card-header">
+        <span class="card-tag">LỜI PHẬT BÀ QUAN ÂM BAN PHƯỚC</span>
+        <h3 class="card-fortune-num" id="fortuneNum">QUẺ SỐ 01</h3>
+        <h2 class="card-fortune-title" id="fortuneTitle">THƯỢNG THƯỢNG CÁT</h2>
       </div>
-      <button class="beads-click-btn" id="btnCountBead">+1 Hạt</button>
-      <button class="beads-close-btn" id="btnCloseBeads">✕</button>
-    </div>
-
-    <!-- BANNER XƯỚNG SỚ CẦU AN ĐỈNH ĐIỆN -->
-    <div class="chanting-banner" id="chantingBanner">
-      <div class="banner-badge">📜 SỚ CẦU AN TRANG NGHIÊM</div>
-      <div class="banner-content" id="chantingText">
-        Nam Mô Bổn Sư Thích Ca Mâu Ni Phật • Toàn thể thiện nam tín nữ đồng hiệp ý dâng lễ cúng dường...
+      <div class="card-body">
+        <div class="poem-block">
+          <p id="fortunePoem">Đầu xuân mưa thuận gió êm đềm,<br>Trời ban phúc lộc đến thềm nhà xưa.</p>
+        </div>
+        <div class="analysis-block">
+          <h4>📖 Luận Giải:</h4>
+          <p id="fortuneMeaning">Cầu tài đại cát, gia đạo an khang. Mọi mong ước nay sắp thành hiện thực.</p>
+        </div>
+        <div class="advice-block">
+          <h4>🪷 Lời Khuyên Tu Tâm:</h4>
+          <p id="fortuneAdvice">Giữ tâm khiêm tốn, giúp đỡ người nghèo khó để phước báu được lâu dài.</p>
+        </div>
       </div>
-    </div>
-
-    <!-- MODAL QUẺ XĂM PHẬT BÀ QUAN ÂM -->
-    <div class="fortune-modal" id="fortuneModal">
-      <div class="modal-card">
-        <button class="modal-close-btn" id="closeFortuneBtn">✕</button>
-        <div class="card-header">
-          <span class="card-tag">LỜI PHẬT BÀ QUAN ÂM BAN PHƯỚC</span>
-          <h3 class="card-fortune-num" id="fortuneNum">QUẺ SỐ 01</h3>
-          <h2 class="card-fortune-title" id="fortuneTitle">THƯỢNG THƯỢNG CÁT</h2>
-        </div>
-        <div class="card-body">
-          <div class="poem-block">
-            <p id="fortunePoem">Đầu xuân mưa thuận gió êm đềm,<br>Trời ban phúc lộc đến thềm nhà xưa.</p>
-          </div>
-          <div class="analysis-block">
-            <h4>📖 Luận Giải:</h4>
-            <p id="fortuneMeaning">Cầu tài đại cát, gia đạo an khang. Mọi mong ước nay sắp thành hiện thực.</p>
-          </div>
-          <div class="advice-block">
-            <h4>🪷 Lời Khuyên Tu Tâm:</h4>
-            <p id="fortuneAdvice">Giữ tâm khiêm tốn, giúp đỡ người nghèo khó để phước báu được lâu dài.</p>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span>Nam Mô Đại Từ Đại Bi Tầm Thinh Cứu Khổ Cứu Nạn Quan Thế Âm Bồ Tát 🙏</span>
-        </div>
+      <div class="card-footer">
+        <span>Nam Mô Đại Từ Đại Bi Tầm Thinh Cứu Khổ Cứu Nạn Quan Thế Âm Bồ Tát 🙏</span>
       </div>
     </div>
-
-    <!-- BẢNG CÔNG CỤ TƯƠNG TÁC DƯỚI ĐÁY (PHONG CÁCH GAME MẪU 1) -->
-    <footer class="bottom-action-bar">
-      <!-- Cụm nút hành động chính (Pill Buttons) -->
-      <div class="action-pills-row">
-        <button class="pill-btn" id="btnActionBow" title="Lạy Phật Tam Bái (3D Bowing)">
-          <span class="pill-icon">🧘‍♂️</span>
-          <span class="pill-title">Lạy Phật</span>
-        </button>
-        <button class="pill-btn" id="btnActionBeads" title="Lần Tràng Hạt 108 Hạt">
-          <span class="pill-icon">📿</span>
-          <span class="pill-title">Tràng Hạt</span>
-        </button>
-        <button class="pill-btn" id="btnActionChant" title="Tụng Kinh Gõ Mõ">
-          <span class="pill-icon">📜</span>
-          <span class="pill-title">Tụng Kinh</span>
-        </button>
-        <button class="pill-btn" id="btnActionMeditate" title="Tọa Thiền Tĩnh Tâm">
-          <span class="pill-icon">🧘</span>
-          <span class="pill-title">Thiền Định</span>
-        </button>
-        <button class="pill-btn pill-btn-primary" id="btnActionOffer" title="Dâng Hương & Lễ Cúng">
-          <span class="pill-icon">🪷</span>
-          <span class="pill-title">Dâng Lễ</span>
-        </button>
-        <button class="pill-btn" id="btnActionFortune" title="Rút Quẻ Xăm Đầu Ngày">
-          <span class="pill-icon">🎋</span>
-          <span class="pill-title">Rút Quẻ</span>
-        </button>
-      </div>
-
-      <!-- Khung gõ lời khấn nguyện nhanh cho người xem -->
-      <div class="chat-prayer-bar">
-        <div class="quick-prayer-chips">
-          <span class="chip" data-text="Nam Mô A Di Đà Phật 🙏">A Di Đà Phật</span>
-          <span class="chip" data-text="Cầu gia đạo bình an, vạn sự cát tường 🌸">Cầu Bình An</span>
-          <span class="chip" data-text="Cầu cho con thi đỗ, vượt qua hết môn 📚">Cầu Đỗ Đạt</span>
-          <span class="chip" data-text="Cầu cho công việc hanh thông, tài lộc dồi dào 💰">Cầu Tài Lộc</span>
-          <span class="chip" data-text="Xin que 🎋">Xin Quẻ</span>
-        </div>
-        <div class="chat-input-wrapper">
-          <input type="text" id="prayerInput" placeholder="Nhập lời khấn nguyện của bạn (vd: Cầu bình an, đỗ đạt, tài lộc)..." maxlength="100">
-          <button class="send-prayer-btn" id="btnSendPrayer">Gửi Lời Khấn 🙏</button>
-          <button class="btn-clean-mode" id="btnObsClean" title="Chế độ Clean Overlay cho OBS Studio (Phím tắt: H)">🖥️ OBS Mode</button>
-        </div>
-      </div>
-    </footer>
-
   </div>
 
   <script src="pagoda.js"></script>

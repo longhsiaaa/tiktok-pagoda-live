@@ -3,460 +3,142 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bản Demo Tương Tác 3D: Lễ Chùa Dâng Hương Online - longnh.com</title>
+  <title>Bản Demo Livestream Chùa Online & Điều Khiển RPC - longnh.com</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <style>
-    /* NHÚNG TOÀN BỘ CSS CHO BẢN DEMO 3D ĐỘC LẬP TRÊN LONGNH.COM */
-    :root {
-      --color-gold: #ffd700;
-      --color-gold-deep: #cfa635;
-      --color-dark-lacquer: rgba(22, 10, 6, 0.92);
-      --color-lotus-pink: #fd79a8;
-      --font-serif: 'Playfair Display', serif;
-      --font-display: 'Cinzel', serif;
-      --font-sans: 'Roboto', sans-serif;
-    }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { width: 100vw; height: 100vh; overflow: hidden; background: #0d0604; font-family: var(--font-sans); color: #f5f6fa; user-select: none; }
-    #webgl-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-    .overlay-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
-    .overlay-container > * { pointer-events: auto; }
-
-    /* Header */
-    .top-nav-bar { display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 18px; background: linear-gradient(180deg, rgba(13,6,4,0.9), transparent); }
-    .user-badge { display: flex; align-items: center; gap: 12px; background: var(--color-dark-lacquer); border: 1.5px solid var(--color-gold-deep); border-radius: 30px; padding: 6px 16px 6px 8px; backdrop-filter: blur(8px); }
-    .user-avatar-circle { width: 36px; height: 36px; border-radius: 50%; background: #3e1b10; border: 1.5px solid var(--color-gold); display: flex; align-items: center; justify-content: center; font-size: 18px; }
-    .user-dharma-name { font-size: 13px; font-weight: 700; color: var(--color-gold); font-family: var(--font-serif); }
-    .user-level-tag { font-size: 9px; color: #f5cd79; background: rgba(255,215,0,0.15); padding: 1px 6px; border-radius: 10px; border: 1px solid rgba(255,215,0,0.3); margin-left: 6px; }
-    .temple-tag { font-size: 10px; color: #bbb; margin-top: 2px; }
-    .top-btn { background: var(--color-dark-lacquer); border: 1px solid rgba(255,215,0,0.4); color: #ffd700; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; backdrop-filter: blur(8px); }
-
-    /* HUD */
-    .live-hud-panel { position: absolute; top: 75px; right: 18px; width: 320px; background: linear-gradient(135deg, rgba(35,16,10,0.92), rgba(20,8,5,0.96)); border: 2px solid var(--color-gold-deep); border-radius: 12px; z-index: 25; padding: 10px 12px; backdrop-filter: blur(8px); }
-    .hud-header { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,215,0,0.25); padding-bottom: 6px; margin-bottom: 6px; }
-    .hud-subtitle { font-size: 8px; letter-spacing: 2px; color: var(--color-gold); font-family: var(--font-display); }
-    .hud-title { font-size: 12px; font-weight: 700; color: #fff; }
-    .hud-grid { display: flex; flex-direction: column; gap: 4px; }
-    .hud-item { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.04); padding: 4px 6px; border-radius: 5px; border-left: 3px solid var(--color-gold); font-size: 10.5px; }
-    .hud-item.hud-highlight { border-left-color: var(--color-lotus-pink); background: linear-gradient(90deg, rgba(232,67,147,0.15), rgba(255,215,0,0.1)); }
-    .gift-badge { font-weight: 700; color: var(--color-gold); }
-    .action-desc { color: #dcdde1; text-align: right; font-size: 10px; }
-    .hud-footer { margin-top: 6px; padding-top: 5px; border-top: 1px dashed rgba(255,255,255,0.15); font-size: 9.5px; color: #fbc531; display: flex; flex-direction: column; gap: 2px; }
-
-    /* Bubbles 3D */
-    .bubbles-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15; }
-    .char-3d-nametag { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
-    .nametag-dharma { font-size: 10px; font-weight: 700; color: #fff; background: rgba(10,5,3,0.85); border: 1px solid rgba(255,215,0,0.4); padding: 1px 6px; border-radius: 6px; white-space: nowrap; }
-    .nametag-level { font-size: 8px; color: var(--color-gold); background: rgba(0,0,0,0.6); padding: 0 4px; border-radius: 4px; margin-top: 1px; }
-    .char-crown-badge { font-size: 14px; margin-bottom: -3px; filter: drop-shadow(0 0 6px #ffd700); }
-    .prayer-speech-bubble { position: absolute; transform: translate(-50%, -125%); background: linear-gradient(135deg, rgba(28,12,7,0.94), rgba(15,6,3,0.96)); border: 1.5px solid var(--color-gold); color: #fff; font-size: 11px; font-weight: 600; padding: 6px 12px; border-radius: 12px; white-space: nowrap; box-shadow: 0 6px 20px rgba(0,0,0,0.8); z-index: 20; animation: popPrayer 4.5s cubic-bezier(0.18,0.89,0.32,1.28) forwards; }
-    .prayer-speech-bubble::after { content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); border-width: 6px 6px 0 6px; border-style: solid; border-color: var(--color-gold) transparent transparent transparent; }
-
-    /* Bottom Action Bar */
-    .bottom-action-bar { background: linear-gradient(180deg, transparent, rgba(16,7,4,0.95) 30%, rgba(12,5,3,0.98)); padding: 12px 20px 16px 20px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
-    .action-pills-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-    .pill-btn { display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, rgba(46,20,11,0.9), rgba(28,11,6,0.95)); border: 1.5px solid var(--color-gold-deep); border-radius: 24px; padding: 8px 16px; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.6); backdrop-filter: blur(6px); transition: all 0.2s; }
-    .pill-btn:hover { background: #4a2011; border-color: #ffd700; transform: translateY(-3px); box-shadow: 0 0 12px rgba(255,215,0,0.5); }
-    .pill-btn.pill-btn-primary { background: linear-gradient(135deg, #8b1111, #520909); border-color: #ffd700; }
-
-    .chat-prayer-bar { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 650px; }
-    .quick-prayer-chips { display: flex; gap: 6px; justify-content: center; }
-    .chip { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,0,0.3); border-radius: 12px; padding: 3px 10px; font-size: 10px; color: #fad390; cursor: pointer; }
-    .chat-input-wrapper { display: flex; gap: 8px; width: 100%; }
-    .chat-input-wrapper input { flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,0,0.35); border-radius: 20px; padding: 8px 16px; color: #fff; font-size: 12px; outline: none; }
-    .send-prayer-btn { background: linear-gradient(135deg, #b7791f, #8c531b); border: none; border-radius: 20px; padding: 8px 18px; color: #fff; font-weight: 700; font-size: 12px; cursor: pointer; }
-
-    /* Modal */
-    .fortune-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.78); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-    .fortune-modal.open { opacity: 1; pointer-events: auto; }
-    .modal-card { width: 90%; max-width: 440px; background: linear-gradient(145deg, #f5ebd7, #e8d7b7); border: 4px solid #8c531b; border-radius: 14px; padding: 24px; color: #3e2723; }
-    .card-fortune-title { font-size: 20px; font-family: var(--font-serif); color: #5c1810; font-weight: 700; text-align: center; margin: 4px 0 10px; }
-    .poem-block { background: rgba(183,121,31,0.08); border-left: 3px solid #b71540; padding: 8px 12px; font-family: var(--font-serif); font-style: italic; font-size: 12.5px; margin-bottom: 10px; line-height: 1.5; }
-
-    @keyframes popPrayer {
-      0% { opacity: 0; transform: translate(-50%, -100%) scale(0.8); }
-      12%, 85% { opacity: 1; transform: translate(-50%, -125%) scale(1); }
-      100% { opacity: 0; transform: translate(-50%, -140%) scale(0.9); }
-    }
-  </style>
+  <link rel="stylesheet" href="../public/style.css">
 </head>
-<body>
-  <div id="webgl-container"></div>
+<body class="studio-body">
+  <div class="studio-layout">
+    <main class="stream-viewport-pane">
+      <div class="stream-screen-frame" id="streamFrame">
+        <div class="temple-bg-layer"></div>
+        <canvas id="effectsCanvas" class="effects-canvas"></canvas>
 
-  <div class="overlay-container">
-    <header class="top-nav-bar">
-      <div class="user-badge">
-        <div class="user-avatar-circle">🧘‍♂️</div>
-        <div>
-          <div><span class="user-dharma-name">Phật tử Diệu Tâm</span><span class="user-level-tag">Bậc 1 • Hạt Sen</span></div>
-          <div class="temple-tag">🪷 Vạn Phúc Tự • 128 đang viếng chùa</div>
+        <div class="live-stream-header">
+          <div class="live-status-pill">
+            <span class="live-dot"></span>
+            <span class="live-badge-text">LIVE @zenfacts_vn • 128 mắt</span>
+          </div>
+          <div class="live-metrics-pill">
+            <span>🌾 <span id="totalIncenseCount">1.022</span> hương</span>
+            <span class="metric-divider">•</span>
+            <span>💎 <span id="totalCoinsCount">13.948</span> CĐ</span>
+          </div>
+        </div>
+
+        <div class="altar-interact-zone">
+          <button class="altar-click-btn btn-thinh-chuong" id="btnClickBell">🔔 Thỉnh Chuông</button>
+          <div class="altar-marquee-box">
+            <span class="marquee-text" id="marqueeText">🎋 "Xin xăm: Quẻ số 1 Thượng Thượng Cát - Long Đức Chiếu Mệnh"</span>
+          </div>
+          <button class="altar-click-btn btn-go-mo" id="btnClickWoodblock">🪵 Gõ Mõ (<span id="woodblockHitCount">9.317</span>)</button>
+        </div>
+
+        <div class="vip-terrace-row" id="vipTerraceRow"></div>
+        <div class="royal-carpet-aisle">
+          <div class="carpet-lotus-motif">🪷</div>
+          <div class="carpet-lotus-motif">🪷</div>
+          <div class="carpet-lotus-motif">🪷</div>
+          <div class="carpet-lotus-motif">🪷</div>
+        </div>
+        <div class="congregation-grid" id="congregationGrid"></div>
+        <div class="stream-speech-layer" id="streamSpeechLayer"></div>
+
+        <div class="stream-bottom-overlay">
+          <div class="bottom-donors-row">
+            <div class="top-donor-card">
+              <span class="donor-crown">👑</span>
+              <div class="donor-details">
+                <span class="donor-name" id="topDonorName">Tiến Trương</span>
+                <span class="donor-merit">Công đức: <strong id="topDonorCoins">5.043</strong> CĐ</span>
+              </div>
+            </div>
+            <div class="merit-mini-board">
+              <div class="board-title">TẤM LÒNG THÀNH</div>
+              <ul class="board-donor-list">
+                <li><span class="rank">①</span> <span class="d-name">Tiến Trương</span> <span class="d-coins">5.043</span></li>
+                <li><span class="rank">②</span> <span class="d-name">Anh Thơ 1227</span> <span class="d-coins">833</span></li>
+                <li><span class="rank">③</span> <span class="d-name">tao nồng ảnh...</span> <span class="d-coins">550</span></li>
+                <li><span class="rank">④</span> <span class="d-name">Nguyễn Đăng k...</span> <span class="d-coins">356</span></li>
+              </ul>
+            </div>
+          </div>
+          <div class="live-gift-tabs-bar">
+            <div class="gift-tab"><span class="tab-badge">1 COIN / CMT</span><span class="tab-action">🪔 Dâng hương</span></div>
+            <div class="gift-tab"><span class="tab-badge">5 COINS / TIM</span><span class="tab-action">🙏 Cầu phúc</span></div>
+            <div class="gift-tab"><span class="tab-badge">10+ COINS</span><span class="tab-action">🌸 Hoa sen</span></div>
+            <div class="gift-tab"><span class="tab-badge">50+ COINS</span><span class="tab-action">🏮 Hoa đăng</span></div>
+          </div>
         </div>
       </div>
-      <div>
-        <button class="top-btn" id="btnCameraAngle">🎥 Đổi Góc Nhìn</button>
-      </div>
-    </header>
+    </main>
 
-    <aside class="live-hud-panel">
-      <div class="hud-header">
-        <span style="font-size:22px">🪷</span>
-        <div>
-          <div class="hud-subtitle">CHÙA ONLINE 3D • LONGNH.COM</div>
-          <h2 class="hud-title">HƯỚNG DẪN DÂNG LỄ TÂM LINH</h2>
+    <aside class="control-panel-pane">
+      <div class="panel-main-header">
+        <h2>🎛️ Điều Khiển Live & RPC</h2>
+        <button class="obs-mode-btn" id="btnToggleObsMode">🖥️ Mở OBS Đầy Đủ ↗</button>
+      </div>
+
+      <div class="panel-scroll-content">
+        <section class="panel-section">
+          <div class="section-title">🔊 ÂM THANH CHÙA & GIỌNG ĐỌC KHẤN</div>
+          <button class="master-sound-btn" id="btnMasterSound">🔔 Bật Âm Thanh Chùa & Giọng Đọc</button>
+          <div class="audio-toggle-row">
+            <button class="toggle-pill active" id="btnToggleVoice">🎙️ Giọng Đọc: BẬT</button>
+            <button class="toggle-pill active" id="btnToggleBgm">🎵 Nhạc Nền: BẬT</button>
+          </div>
+          <div class="slider-control-group">
+            <div class="slider-row">
+              <span class="slider-label">🎵 Nhạc nền</span>
+              <input type="range" id="bgmVolumeSlider" min="0" max="100" value="89">
+              <span class="slider-val" id="bgmValText">89%</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-label">🎙️ Giọng đọc</span>
+              <input type="range" id="voiceVolumeSlider" min="0" max="100" value="86">
+              <span class="slider-val" id="voiceValText">86%</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">🙏 KÍCH HOẠT NGHI THỨC TƯƠNG TÁC (RPC)</div>
+          <div class="rpc-input-group">
+            <input type="text" id="rpcSenderName" value="Quỳnh_Finn" placeholder="Tên người khấn...">
+            <input type="text" id="rpcPrayerText" value="Cầu cho gia đình bình an, tài lộc hanh thông, vạn sự cát tường" placeholder="Lời khấn...">
+          </div>
+          <div class="rpc-actions-grid">
+            <button class="rpc-btn btn-gold" id="btnRpcIncense">🪔 Thắp 3 Nén Hương</button>
+            <button class="rpc-btn btn-orange" id="btnRpcLantern">🏮 Thả Đèn Hoa Đăng</button>
+            <button class="rpc-btn btn-brown" id="btnRpcWoodblock">🪵 Gõ Mõ (+5)</button>
+            <button class="rpc-btn btn-gold" id="btnRpcBell">🔔 Thỉnh Chuông Chùa</button>
+            <button class="rpc-btn btn-brown" id="btnRpcDivination">🎋 Xin Xăm / Gieo Quẻ</button>
+            <button class="rpc-btn btn-pink" id="btnRpcLotus">🌸 Dâng Hoa Sen Vàng</button>
+            <button class="rpc-btn btn-dragon" id="btnRpcDragon">🐉 Đại Lễ Kim Long Chầu Phật</button>
+            <button class="rpc-btn btn-chant" id="btnRpcChant">🎙️ AI Đọc Sớ Cầu An</button>
+          </div>
+        </section>
+
+        <div class="panel-footer-info">
+          <span>Phát triển bởi <strong>LongNH</strong> • <a href="https://longnh.com" target="_blank">longnh.com</a></span>
         </div>
-      </div>
-      <div class="hud-grid">
-        <div class="hud-item"><span class="gift-badge">🌹 1 Xu (Rose/Nến)</span><span class="action-desc">Thắp 1 nén nhang trầm + chuông</span></div>
-        <div class="hud-item"><span class="gift-badge">🌸 5 Xu (Hoa Sen)</span><span class="action-desc">Dâng đóa hoa sen hồng thanh tịnh</span></div>
-        <div class="hud-item"><span class="gift-badge">🙏 10 Xu (Trái tim)</span><span class="action-desc">Phật tử tiến lên <strong>Lạy Tam Bái 3D</strong></span></div>
-        <div class="hud-item"><span class="gift-badge">🍎 30 Xu (Mâm quả)</span><span class="action-desc">Dâng mâm ngũ quả & Ghi Sổ Vàng</span></div>
-        <div class="hud-item hud-highlight"><span class="gift-badge">🪷 100+ Xu (Đại Lễ)</span><span class="action-desc">Mưa hoa sen, hào quang, đọc sớ</span></div>
-      </div>
-      <div class="hud-footer">
-        <span>💬 Gõ <strong>"A Di Đà Phật"</strong>: Niệm Phật hiển thị lời khấn</span>
-        <span>🎋 Gõ <strong>"Xin que"</strong>: Rút quẻ xăm may mắn Quan Âm</span>
       </div>
     </aside>
-
-    <div id="speech-bubbles-layer" class="bubbles-layer"></div>
-
-    <div class="fortune-modal" id="fortuneModal">
-      <div class="modal-card">
-        <div style="text-align:right"><button id="closeFortuneBtn" style="background:none;border:none;font-size:18px;cursor:pointer">✕</button></div>
-        <div style="text-align:center;font-size:10px;font-weight:bold;color:#8c531b">LỜI PHẬT BÀ QUAN ÂM BAN PHƯỚC</div>
-        <h2 class="card-fortune-title">QUẺ SỐ 01: THƯỢNG THƯỢNG CÁT</h2>
-        <div class="poem-block">Đầu xuân mưa thuận gió êm đềm,<br>Trời ban phúc lộc đến thềm nhà xưa.</div>
-        <div style="font-size:12px;margin-bottom:6px"><strong>📖 Luận Giải:</strong> Cầu tài đại cát, gia đạo an khang. Mọi mong ước nay sắp thành hiện thực.</div>
-        <div style="font-size:12px"><strong>🪷 Lời Khuyên:</strong> Giữ tâm khiêm tốn, giúp đỡ người nghèo khó để phước báu được lâu dài.</div>
-      </div>
-    </div>
-
-    <footer class="bottom-action-bar">
-      <div class="action-pills-row">
-        <button class="pill-btn" id="btnActionBow"><span class="pill-icon">🧘‍♂️</span><span>Lạy Phật</span></button>
-        <button class="pill-btn" id="btnActionChant"><span class="pill-icon">📜</span><span>Tụng Kinh</span></button>
-        <button class="pill-btn pill-btn-primary" id="btnActionOffer"><span class="pill-icon">🪷</span><span>Dâng Lễ</span></button>
-        <button class="pill-btn" id="btnActionFortune"><span class="pill-icon">🎋</span><span>Rút Quẻ</span></button>
-      </div>
-
-      <div class="chat-prayer-bar">
-        <div class="quick-prayer-chips">
-          <span class="chip" data-text="Nam Mô A Di Đà Phật 🙏">A Di Đà Phật</span>
-          <span class="chip" data-text="Cầu gia đạo bình an, vạn sự cát tường 🌸">Cầu Bình An</span>
-          <span class="chip" data-text="Cầu cho con thi đỗ, vượt qua hết môn 📚">Cầu Đỗ Đạt</span>
-          <span class="chip" data-text="Xin que 🎋">Xin Quẻ</span>
-        </div>
-        <div class="chat-input-wrapper">
-          <input type="text" id="prayerInput" placeholder="Nhập lời khấn nguyện của bạn...">
-          <button class="send-prayer-btn" id="btnSendPrayer">Gửi Lời Khấn 🙏</button>
-        </div>
-      </div>
-    </footer>
   </div>
 
-  <script>
-    // THREE.JS 3D ENGINE & CLIENT LOGIC
-    let scene, camera, renderer, haloGroup;
-    let cameraMode = 0;
-    const charactersList = [];
-    const petalsList = [];
-    const smokeParticles = [];
-    const speechBubbles = [];
+  <div class="fortune-modal" id="fortuneModal">
+    <div class="modal-card">
+      <div style="text-align:right"><button id="closeFortuneBtn" style="background:none;border:none;font-size:18px;cursor:pointer">✕</button></div>
+      <div style="text-align:center;font-size:10px;font-weight:bold;color:#8c531b">LỜI PHẬT BÀ QUAN ÂM BAN PHƯỚC</div>
+      <h2 class="card-fortune-title" id="fortuneTitle">QUẺ SỐ 01: THƯỢNG THƯỢNG CÁT</h2>
+      <div class="poem-block" id="fortunePoem">Đầu xuân mưa thuận gió êm đềm,<br>Trời ban phúc lộc đến thềm nhà xưa.</div>
+      <div style="font-size:12px;margin-bottom:6px"><strong>📖 Luận Giải:</strong> <span id="fortuneMeaning">Cầu tài đại cát, gia đạo an khang. Mọi mong ước nay sắp thành hiện thực.</span></div>
+      <div style="font-size:12px"><strong>🪷 Lời Khuyên:</strong> <span id="fortuneAdvice">Giữ tâm khiêm tốn, giúp đỡ người nghèo khó để phước báu được lâu dài.</span></div>
+    </div>
+  </div>
 
-    // Âm thanh
-    let audioCtx = null;
-    function getAudioCtx() {
-      if (!audioCtx) {
-        const AudioClass = window.AudioContext || window.webkitAudioContext;
-        audioCtx = new AudioClass();
-      }
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      return audioCtx;
-    }
-    function playBell() {
-      const ctx = getAudioCtx();
-      const now = ctx.currentTime;
-      [130.8, 261.6, 523.2, 784.8].forEach((f, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine'; osc.frequency.setValueAtTime(f, now);
-        gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime([0.6, 0.45, 0.3, 0.15][idx], now + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 5.0);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(now); osc.stop(now + 5.2);
-      });
-    }
-    function playWoodblock() {
-      const ctx = getAudioCtx();
-      const now = ctx.currentTime;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const filter = ctx.createBiquadFilter();
-      osc.type = 'triangle'; osc.frequency.setValueAtTime(580, now);
-      osc.frequency.exponentialRampToValueAtTime(260, now + 0.12);
-      filter.type = 'bandpass'; filter.frequency.setValueAtTime(580, now); filter.Q.setValueAtTime(4.5, now);
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.7, now + 0.004);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
-      osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
-      osc.start(now); osc.stop(now + 0.15);
-    }
-
-    function init() {
-      const container = document.getElementById('webgl-container');
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x120805);
-      scene.fog = new THREE.FogExp2(0x1a0a06, 0.022);
-
-      camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 0.1, 150);
-      setCamPos(0);
-
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      container.appendChild(renderer.domElement);
-
-      // Đèn
-      scene.add(new THREE.AmbientLight(0x4a2a18, 1.3));
-      const dirLight = new THREE.DirectionalLight(0xfffae0, 1.8);
-      dirLight.position.set(5, 12, 4);
-      scene.add(dirLight);
-
-      const altarLight = new THREE.PointLight(0xffd700, 2.5, 18);
-      altarLight.position.set(0, 4.5, -6.5);
-      scene.add(altarLight);
-
-      // Sàn Gỗ & Thảm Đỏ
-      const floor = new THREE.Mesh(new THREE.PlaneGeometry(28, 36), new THREE.MeshStandardMaterial({ color: 0x3d2015, roughness: 0.4 }));
-      floor.rotation.x = -Math.PI / 2;
-      scene.add(floor);
-
-      const carpet = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 26), new THREE.MeshStandardMaterial({ color: 0x8b1515, roughness: 0.8 }));
-      carpet.rotation.x = -Math.PI / 2;
-      carpet.position.set(0, 0.015, 2);
-      scene.add(carpet);
-
-      // Cột chùa
-      [-5.5, 5.5].forEach(px => {
-        [-3.5, 6].forEach(pz => {
-          const col = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.48, 14, 20), new THREE.MeshStandardMaterial({ color: 0x3b140a, roughness: 0.4 }));
-          col.position.set(px, 7, pz);
-          scene.add(col);
-        });
-      });
-
-      // Tượng Phật dát vàng & Tòa sen
-      const altar = new THREE.Group();
-      const base = new THREE.Mesh(new THREE.BoxGeometry(8, 0.8, 4.5), new THREE.MeshStandardMaterial({ color: 0x3d1a0e }));
-      base.position.set(0, 0.4, -7.5);
-      altar.add(base);
-
-      const goldMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.2 });
-      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.1, 1.6, 20), goldMat);
-      torso.position.set(0, 2.7, -8);
-      altar.add(torso);
-
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 20), goldMat);
-      head.position.set(0, 3.8, -8);
-      altar.add(head);
-
-      const legs = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.35, 12, 24), goldMat);
-      legs.position.set(0, 1.95, -8);
-      legs.rotation.x = Math.PI / 2;
-      altar.add(legs);
-
-      // Hào quang xoay
-      haloGroup = new THREE.Group();
-      haloGroup.add(new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.06, 16, 48), new THREE.MeshBasicMaterial({ color: 0xffd700 })));
-      haloGroup.position.set(0, 3.8, -8.4);
-      altar.add(haloGroup);
-
-      // Lư hương đồng
-      const censer = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.45, 0.65, 20), new THREE.MeshStandardMaterial({ color: 0xcfa635, metalness: 0.85, roughness: 0.3 }));
-      censer.position.set(0, 1.45, -5.6);
-      altar.add(censer);
-      scene.add(altar);
-
-      // Nhân vật Chibi 3D
-      const names = ['Thích Thì Chiều', 'Thích nhiều thứ', 'Thích Phước Tâm', 'An Lạc', 'Tuệ An', 'Lan\'slan', 'Đức Tâm', 'Từ Như', 'Hìn', 'An Nhân'];
-      let nIdx = 0;
-      for (let r = 0; r < 6; r++) {
-        const z = 0.5 + r * 1.7;
-        for (let c = 0; c < 3; c++) {
-          [-1.8 - c * 1.35, 1.8 + c * 1.35].forEach(x => {
-            const pGroup = new THREE.Group();
-            const mat = new THREE.Mesh(new THREE.BoxGeometry(1, 0.04, 1), new THREE.MeshStandardMaterial({ color: 0x5a1810 }));
-            pGroup.add(mat);
-
-            const zafu = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 0.16, 16), new THREE.MeshStandardMaterial({ color: 0x7c4320 }));
-            zafu.position.y = 0.12;
-            pGroup.add(zafu);
-
-            const pivot = new THREE.Group();
-            pivot.position.y = 0.2;
-            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.38, 0.7, 16), new THREE.MeshStandardMaterial({ color: 0x546e7a }));
-            body.position.y = 0.35;
-            pivot.add(body);
-
-            const cHead = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
-            cHead.position.y = 0.88;
-            pivot.add(cHead);
-
-            pGroup.add(pivot);
-            pGroup.position.set(x, 0, z);
-            scene.add(pGroup);
-
-            charactersList.push({
-              group: pGroup, pivot, name: names[nIdx % names.length],
-              level: `Cấp ${Math.floor(Math.random() * 4) + 1}`,
-              isCenterHero: (r === 5 && x > 0 && x < 2),
-              idleOffset: Math.random() * 6.28, isBowing: false, bowProgress: 0, bowRepeat: 0,
-              screenX: 0, screenY: 0
-            });
-            nIdx++;
-          });
-        }
-      }
-
-      // Mưa cánh sen
-      const pGeo = new THREE.ConeGeometry(0.08, 0.2, 5);
-      pGeo.rotateX(Math.PI / 2);
-      const pMat = new THREE.MeshStandardMaterial({ color: 0xfd79a8, roughness: 0.35 });
-      for (let i = 0; i < 70; i++) {
-        const pet = new THREE.Mesh(pGeo, pMat);
-        pet.position.set((Math.random() - 0.5) * 18, Math.random() * 12, (Math.random() - 0.5) * 18 + 2);
-        pet.userData = { speedY: 0.015 + Math.random() * 0.02, rotY: (Math.random() - 0.5) * 0.03 };
-        scene.add(pet);
-        petalsList.push(pet);
-      }
-
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-    }
-
-    function setCamPos(mode) {
-      if (mode === 0) camera.position.set(0, 3.4, 11.5);
-      else camera.position.set(0, 5.8, 13.0);
-      camera.lookAt(0, 3.0, -8.0);
-    }
-
-    // Hoạt ảnh lạy Phật
-    function bowAll(repeats = 3) {
-      charactersList.forEach(c => {
-        c.isBowing = true; c.bowProgress = 0; c.bowRepeat = repeats;
-      });
-      for (let i = 0; i < repeats; i++) setTimeout(playWoodblock, i * 1100);
-    }
-
-    const tVec = new THREE.Vector3();
-    const sLayer = document.getElementById('speech-bubbles-layer');
-
-    function updateOverlay() {
-      sLayer.innerHTML = '';
-      charactersList.forEach(c => {
-        tVec.set(c.group.position.x, c.group.position.y + 1.25, c.group.position.z);
-        tVec.project(camera);
-        if (tVec.z > 1.0) return;
-        const sx = (tVec.x * 0.5 + 0.5) * window.innerWidth;
-        const sy = (-tVec.y * 0.5 + 0.5) * window.innerHeight;
-        c.screenX = sx; c.screenY = sy;
-
-        const tag = document.createElement('div');
-        tag.className = 'char-3d-nametag';
-        tag.style.left = `${sx}px`; tag.style.top = `${sy}px`;
-        tag.innerHTML = `${c.isCenterHero ? '<span class="char-crown-badge">👑</span>' : ''}<span class="nametag-dharma">${c.name}</span><span class="nametag-level">${c.level}</span>`;
-        sLayer.appendChild(tag);
-      });
-
-      speechBubbles.forEach(b => {
-        const bubble = document.createElement('div');
-        bubble.className = 'prayer-speech-bubble';
-        bubble.style.left = `${b.x}px`; bubble.style.top = `${b.y}px`;
-        bubble.textContent = b.text;
-        sLayer.appendChild(bubble);
-      });
-    }
-
-    function addBubble(text) {
-      const c = charactersList[Math.floor(Math.random() * charactersList.length)];
-      if (!c) return;
-      const bObj = { x: c.screenX, y: c.screenY - 18, text };
-      speechBubbles.push(bObj);
-      setTimeout(() => {
-        const idx = speechBubbles.indexOf(bObj);
-        if (idx !== -1) speechBubbles.splice(idx, 1);
-      }, 4500);
-    }
-
-    let clock = new THREE.Clock();
-    function animate() {
-      requestAnimationFrame(animate);
-      const delta = clock.getDelta();
-      const time = clock.getElapsedTime();
-
-      if (haloGroup) haloGroup.rotation.z = time * 0.25;
-
-      charactersList.forEach(c => {
-        if (c.isBowing) {
-          c.bowProgress += delta * 1.8;
-          c.pivot.rotation.x = Math.sin(c.bowProgress * Math.PI) * 1.2;
-          if (c.bowProgress >= 1.0) {
-            c.bowProgress = 0; c.bowRepeat--;
-            if (c.bowRepeat <= 0) { c.isBowing = false; c.pivot.rotation.x = 0; }
-          }
-        } else {
-          c.pivot.position.y = 0.2 + Math.sin(time * 2.2 + c.idleOffset) * 0.025;
-        }
-      });
-
-      petalsList.forEach(p => {
-        p.position.y -= p.userData.speedY;
-        p.rotation.y += p.userData.rotY;
-        if (p.position.y < 0.05) p.position.y = 12;
-      });
-
-      updateOverlay();
-      renderer.render(scene, camera);
-    }
-
-    // UI Events
-    document.getElementById('btnActionBow').onclick = () => { bowAll(3); addBubble('Ngũ thể đầu địa, chí tâm đảnh lễ Tam Bảo 🙏'); };
-    document.getElementById('btnActionChant').onclick = () => { playBell(); for (let i = 0; i < 4; i++) setTimeout(playWoodblock, 300 + i * 250); addBubble('Nam Mô A Di Đà Phật 🙏'); };
-    document.getElementById('btnActionOffer').onclick = () => { playBell(); bowAll(1); addBubble('Thành tâm dâng nén hương trầm cúng dường 🪔'); };
-    document.getElementById('btnCameraAngle').onclick = () => { cameraMode = 1 - cameraMode; setCamPos(cameraMode); };
-
-    const modal = document.getElementById('fortuneModal');
-    document.getElementById('btnActionFortune').onclick = () => modal.classList.add('open');
-    document.getElementById('closeFortuneBtn').onclick = () => modal.classList.remove('open');
-
-    function sendPrayer() {
-      const input = document.getElementById('prayerInput');
-      const val = input.value.trim();
-      if (!val) return;
-      addBubble(val); playWoodblock(); input.value = '';
-    }
-    document.getElementById('btnSendPrayer').onclick = sendPrayer;
-    document.getElementById('prayerInput').onkeydown = e => { if (e.key === 'Enter') sendPrayer(); };
-
-    document.querySelectorAll('.chip').forEach(ch => {
-      ch.onclick = () => { document.getElementById('prayerInput').value = ch.getAttribute('data-text'); sendPrayer(); };
-    });
-
-    setInterval(() => {
-      const prayers = ['cầu cho con trúng 2 tỷ vé số', 'cho con vượt qua hết môn', 'Đạt học bổng', 'ielts đạt aim, A di đà phật....', 'Nam mô a di đà phật 🙏'];
-      addBubble(prayers[Math.floor(Math.random() * prayers.length)]);
-    }, 5500);
-
-    init();
-    animate();
-  </script>
+  <script src="../public/pagoda.js"></script>
 </body>
 </html>
