@@ -339,12 +339,12 @@ function handleClientAction(msg, defaultId, defaultName) {
 }
 
 // Ghi nhận vào Sổ Công Đức
-function recordMerit(id, name, diamonds, intent) {
+function recordMerit(id, name, diamonds, intent, avatar = '') {
   if (!meritBook.has(id)) {
     meritBook.set(id, {
       id,
       name,
-      avatar: '',
+      avatar: avatar || '',
       totalDiamonds: 0,
       intent: intent || '',
       timestamp: Date.now()
@@ -353,6 +353,7 @@ function recordMerit(id, name, diamonds, intent) {
   const entry = meritBook.get(id);
   entry.totalDiamonds += diamonds;
   if (intent) entry.intent = intent;
+  if (avatar && !entry.avatar) entry.avatar = avatar;
   entry.timestamp = Date.now();
 
   // Kiểm tra nếu là VIP (nằm trong Top 5 dâng lễ nhiều nhất)
@@ -370,7 +371,7 @@ function updateVipSeats() {
 }
 
 // Xử lý bình luận
-function handleChatEvent(userId, userName, comment) {
+function handleChatEvent(userId, userName, comment, avatar = '') {
   const lower = comment.toLowerCase();
 
   // Tự động rút quẻ xăm nếu bình luận có từ khóa
@@ -379,6 +380,7 @@ function handleChatEvent(userId, userName, comment) {
     broadcast('divination_result', {
       userId,
       name: userName,
+      avatar,
       fortune
     });
     return;
@@ -386,12 +388,13 @@ function handleChatEvent(userId, userName, comment) {
 
   // Tự động gõ mõ nếu bình luận niệm Phật
   if (lower.includes('a di đà') || lower.includes('quan thế âm') || lower.includes('thích ca') || lower.includes('bình an')) {
-    broadcast('sound_woodblock', { userId, name: userName, count: 1 });
+    broadcast('sound_woodblock', { userId, name: userName, avatar, count: 1 });
   }
 
   broadcast('chat_message', {
     userId,
     name: userName,
+    avatar,
     text: comment
   });
 }
@@ -623,21 +626,22 @@ async function connectTikTok(uniqueId) {
 
     // Sự kiện: Viewer bình luận (Chat)
     conn.on(WebcastEvent.CHAT, data => {
-      const { uniqueId, name } = extractUserFromEvent(data);
+      const { uniqueId, name, avatar } = extractUserFromEvent(data);
       const commentText = data?.comment || data?.content || '';
       console.log(`[TIKTOK CHAT] ${name}: ${commentText}`);
-      handleChatEvent(`tt_${uniqueId}`, name, commentText);
+      handleChatEvent(`tt_${uniqueId}`, name, commentText, avatar);
     });
 
     // Sự kiện: Viewer thả tim (Like)
     conn.on(WebcastEvent.LIKE, data => {
-      const { name } = extractUserFromEvent(data);
+      const { name, avatar } = extractUserFromEvent(data);
       const likeCount = Math.min(20, Math.max(1, Number(data?.likeCount || data?.count || 1)));
       broadcast('like_burst', {
         likeCount,
-        name
+        name,
+        avatar
       });
-      broadcast('sound_woodblock', { userId: 'like', name, count: 1 });
+      broadcast('sound_woodblock', { userId: 'like', name, avatar, count: 1 });
     });
 
     // Sự kiện: Viewer gửi quà tặng (Gift)
@@ -654,7 +658,7 @@ async function connectTikTok(uniqueId) {
       console.log(`[TIKTOK GIFT] 🎁 ${name} gửi ${giftName} x${data.repeatCount || 1} (Giá trị: ${diamonds} xu)`);
 
       // Ghi nhận công đức
-      recordMerit(userId, name, diamonds, `Cúng dường ${giftName}`);
+      recordMerit(userId, name, diamonds, `Cúng dường ${giftName}`, avatar);
 
       // Ánh xạ quà tặng theo giá trị xu TikTok vào các đại lễ Phật giáo
       if (diamonds >= 100) {
@@ -662,6 +666,7 @@ async function connectTikTok(uniqueId) {
         broadcast('ceremony_great', {
           userId,
           name,
+          avatar,
           giftName,
           diamondCount: diamonds,
           text: `Đại Lễ Kim Long: Thiện nam tín nữ ${name} phát tâm cúng dường Tam Bảo ${diamonds} xu!`
@@ -672,6 +677,7 @@ async function connectTikTok(uniqueId) {
         broadcast('ceremony_fruit', {
           userId,
           name,
+          avatar,
           giftName,
           diamondCount: diamonds,
           text: `Thiện tín ${name} dâng mâm ngũ quả tươi tốt cúng dường Tam Bảo!`
@@ -681,6 +687,7 @@ async function connectTikTok(uniqueId) {
         broadcast('ceremony_bow', {
           userId,
           name,
+          avatar,
           diamondCount: diamonds,
           bowCount: 3,
           text: `Phật tử ${name} chí tâm đảnh lễ Đức Thế Tôn tam bái!`
@@ -690,6 +697,7 @@ async function connectTikTok(uniqueId) {
         broadcast('ceremony_lotus', {
           userId,
           name,
+          avatar,
           diamondCount: diamonds,
           color: 'pink',
           text: `Phật tử ${name} dâng đóa sen thanh khiết lên Tam Bảo!`
@@ -699,6 +707,7 @@ async function connectTikTok(uniqueId) {
         broadcast('ceremony_incense', {
           userId,
           name,
+          avatar,
           diamondCount: diamonds,
           sticks: 1,
           text: `Thiện tín ${name} thắp nén tâm hương cúng dường!`

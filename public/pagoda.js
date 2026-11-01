@@ -147,7 +147,136 @@
   }
 
   // ========================================================
-  // 1. RENDER ĐÁM ĐÔNG PHẬT TỬ & HÀNG VIP THƯỢNG ĐIỆN
+  // 1. SPRITE ASSETS PRELOAD & CÁC TƯ THẾ LẠY TAM BÁI
+  // ========================================================
+  const ASSETS_PATH = (window.location.pathname.includes('/demo-longnh/') || window.location.href.includes('demo-longnh'))
+    ? '../public/assets/'
+    : 'assets/';
+
+  const SPRITE_FRAMES = {
+    walk1: ASSETS_PATH + 'devotee_walk.png',
+    walk2: ASSETS_PATH + 'devotee_walk_2.png',
+    kneelDown: ASSETS_PATH + 'devotee_kneel_down.png',
+    kneel: ASSETS_PATH + 'devotee.png',
+    forehead: ASSETS_PATH + 'devotee_bow.png',
+    bowMid: ASSETS_PATH + 'devotee_bow_mid.png',
+    prostrate: ASSETS_PATH + 'devotee_prostrate.png',
+    prostrateDeep: ASSETS_PATH + 'devotee_prostrate_deep.png'
+  };
+  Object.values(SPRITE_FRAMES).forEach(url => {
+    const img = new Image();
+    img.src = url;
+  });
+
+  let centralTimers = [];
+  function clearCentralTimers() {
+    while (centralTimers.length > 0) {
+      clearTimeout(centralTimers.pop());
+    }
+  }
+
+  function setCentralPose(poseKey) {
+    const stack = document.getElementById('centralSpriteStack');
+    if (!stack) return;
+    const frames = stack.querySelectorAll('.pose-frame');
+    frames.forEach(img => {
+      img.classList.toggle('active', img.getAttribute('data-pose') === poseKey);
+    });
+  }
+
+  function scheduleCentralPose(delayMs, poseKey) {
+    centralTimers.push(setTimeout(() => {
+      setCentralPose(poseKey);
+    }, delayMs));
+  }
+
+  // Chuỗi 8 tư thế Lạy Phật Tam Bái ngũ thể đầu địa (Hạ gối -> Trán -> Gập 45° -> Chống tay -> Lạy sát đất -> Ngẩng lên)
+  function playThreeBowsSequence(startDelayMs = 0) {
+    scheduleCentralPose(startDelayMs, 'kneelDown');
+    scheduleCentralPose(startDelayMs + 180, 'kneel');
+
+    const bowIntervals = [startDelayMs + 350, startDelayMs + 1900, startDelayMs + 3450];
+    bowIntervals.forEach((t0) => {
+      scheduleCentralPose(t0, 'forehead');            // 1. Chắp tay đưa lên trán
+      scheduleCentralPose(t0 + 180, 'bowMid');        // 2. Cúi gập lưng 45 độ
+      scheduleCentralPose(t0 + 360, 'prostrate');     // 3. Vươn hai tay chống xuống đệm
+      scheduleCentralPose(t0 + 540, 'prostrateDeep'); // 4. Lạy sát đất (Ngũ thể đầu địa)
+      scheduleCentralPose(t0 + 920, 'prostrate');     // 5. Bắt đầu nâng đầu lên
+      scheduleCentralPose(t0 + 1100, 'bowMid');       // 6. Nâng lưng lên 45 độ
+      scheduleCentralPose(t0 + 1280, 'kneel');        // 7. Quỳ thẳng lưng niệm Phật
+
+      // Đợt sóng lạy của hội chúng hai bên hưởng ứng
+      centralTimers.push(setTimeout(() => {
+        playWoodblockSound();
+        triggerCongregationWave();
+      }, t0 + 540));
+    });
+
+    scheduleCentralPose(startDelayMs + 4950, 'forehead');
+    scheduleCentralPose(startDelayMs + 5500, 'kneel');
+  }
+
+  function updateCentralWorshipper(user, avatar, actionLabel, wish) {
+    const centralName = document.getElementById('centralName');
+    const centralAction = document.getElementById('centralAction');
+    const centralAvatar = document.getElementById('centralAvatar');
+    const centralWishBubble = document.getElementById('centralWishBubble');
+
+    if (centralName) safeText(centralName, user || 'Thí Chủ');
+    if (centralAction) safeText(centralAction, actionLabel || '🪔 Dâng hương Tam Bảo');
+    if (centralWishBubble) safeText(centralWishBubble, wish ? `🙏 ${wish}` : '🙏 Nam Mô A Di Đà Phật');
+
+    if (centralAvatar) {
+      if (avatar) {
+        centralAvatar.innerHTML = `<img src="${escapeHtml(avatar)}" alt="" onerror="this.parentElement.textContent='🙏'" />`;
+      } else {
+        centralAvatar.textContent = '🙏';
+      }
+    }
+  }
+
+  // Tín đồ bước đi trên thảm đỏ tiến lên Tam Bảo rồi Lạy Tam Bái
+  function animateWalkerOnCarpet(user, avatar, actionLabel, wish) {
+    const centralEl = document.getElementById('centralWorshipper');
+    if (!centralEl) return;
+
+    clearCentralTimers();
+    updateCentralWorshipper(user, avatar, actionLabel, wish);
+
+    centralEl.classList.remove('walking-up');
+    void centralEl.offsetWidth; // Force reflow
+    centralEl.classList.add('walking-up');
+
+    // Chuyển pose bước đi chân bước luân phiên
+    setCentralPose('walk1');
+    for (let step = 1; step <= 10; step++) {
+      scheduleCentralPose(step * 190, step % 2 === 0 ? 'walk1' : 'walk2');
+    }
+
+    // Khi bước tới trước Lư Hương Tam Bảo (2.1s): dừng bước, hạ gối và lạy 3 lạy
+    centralTimers.push(setTimeout(() => {
+      centralEl.classList.remove('walking-up');
+    }, 2100));
+
+    playThreeBowsSequence(2050);
+  }
+
+  // Đợt sóng cúi lạy của hội chúng hai bên và hàng VIP
+  function triggerCongregationWave() {
+    const figures = document.querySelectorAll('.regular-figure, .vip-avatar-figure');
+    figures.forEach((el, idx) => {
+      const delay = (idx % 6) * 90;
+      setTimeout(() => {
+        el.classList.add('bowing-wave');
+        setTimeout(() => {
+          el.classList.remove('bowing-wave');
+        }, 1400);
+      }, delay);
+    });
+  }
+
+  // ========================================================
+  // 2. RENDER ĐÁM ĐÔNG PHẬT TỬ & HÀNG VIP THƯỢNG ĐIỆN
   // ========================================================
   const VIP_DONORS = [
     { name: 'Tiến Trương', coins: 5043, rank: 'Cấp 5', isChamp: true },
@@ -165,8 +294,11 @@
       const slot = document.createElement('div');
       slot.className = `vip-seat-slot ${d.isChamp ? 'top-champion' : ''}`;
       slot.id = `vip-seat-${idx}`;
+      const delay = (Math.random() * 3.5).toFixed(2);
+      const dur = (3.2 + Math.random() * 1.2).toFixed(2);
+      const breatheHeight = (-(1.8 + Math.random() * 1.5)).toFixed(1);
       slot.innerHTML = `
-        <div class="vip-avatar-figure"></div>
+        <div class="vip-avatar-figure" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px"></div>
         <div class="vip-pillow"></div>
         <span class="vip-name-tag">${escapeHtml(d.name)}</span>
       `;
@@ -194,8 +326,11 @@
       const slot = document.createElement('div');
       slot.className = 'pilgrim-figure-slot';
       slot.id = `pilgrim-l-${i}`;
+      const delay = (Math.random() * 3.5).toFixed(2);
+      const dur = (3.0 + Math.random() * 1.2).toFixed(2);
+      const breatheHeight = (-(1.5 + Math.random() * 1.5)).toFixed(1);
       slot.innerHTML = `
-        <div class="regular-figure" style="animation-delay: ${i * 0.25}s"></div>
+        <div class="regular-figure" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px"></div>
         <div class="regular-cushion"></div>
         <span class="regular-name-tag">${escapeHtml(name)}</span>
       `;
@@ -210,8 +345,11 @@
       const slot = document.createElement('div');
       slot.className = 'pilgrim-figure-slot';
       slot.id = `pilgrim-r-${i}`;
+      const delay = (Math.random() * 3.5).toFixed(2);
+      const dur = (3.0 + Math.random() * 1.2).toFixed(2);
+      const breatheHeight = (-(1.5 + Math.random() * 1.5)).toFixed(1);
       slot.innerHTML = `
-        <div class="regular-figure" style="animation-delay: ${(i - 15) * 0.25}s"></div>
+        <div class="regular-figure" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px"></div>
         <div class="regular-cushion"></div>
         <span class="regular-name-tag">${escapeHtml(name)}</span>
       `;
@@ -223,15 +361,21 @@
   }
 
   // ========================================================
-  // 2. HIỂN THỊ BONG BÓNG LỜI KHẤN THỜI GIAN THỰC (XSS SAFE)
+  // 3. HIỂN THỊ BONG BÓNG LỜI KHẤN THỜI GIAN THỰC (XSS SAFE)
   // ========================================================
-  function showPrayerBubble(text, seatElement) {
+  function showPrayerBubble(text, seatElement, avatar = '', sender = '') {
     if (!streamFrame || !streamSpeechLayer || !text) return;
 
     if (!seatElement) {
-      const allSlots = document.querySelectorAll('.pilgrim-figure-slot, .vip-seat-slot');
-      if (allSlots.length > 0) {
-        seatElement = allSlots[Math.floor(Math.random() * allSlots.length)];
+      // Ưu tiên hiển thị trên Tín Đồ Trung Tâm nếu đang ở trên thảm đỏ
+      const centralWorshipper = document.getElementById('centralWorshipper');
+      if (centralWorshipper && Math.random() < 0.4) {
+        seatElement = centralWorshipper;
+      } else {
+        const allSlots = document.querySelectorAll('.pilgrim-figure-slot, .vip-seat-slot');
+        if (allSlots.length > 0) {
+          seatElement = allSlots[Math.floor(Math.random() * allSlots.length)];
+        }
       }
     }
     if (!seatElement) return;
@@ -239,15 +383,28 @@
     const rect = seatElement.getBoundingClientRect();
     const frameRect = streamFrame.getBoundingClientRect();
 
-    const posX = rect.left - frameRect.left + rect.width / 2;
-    const posY = rect.top - frameRect.top - 8;
+    const posX = Math.max(70, Math.min(frameRect.width - 70, rect.left - frameRect.left + rect.width / 2));
+    const posY = Math.max(30, rect.top - frameRect.top - 12);
 
     const bubble = document.createElement('div');
     bubble.className = 'prayer-pop-bubble';
     bubble.id = `bubble-${speechBubbleId++}`;
     bubble.style.left = `${posX}px`;
     bubble.style.top = `${posY}px`;
-    bubble.textContent = text; // Safe text insertion
+
+    const avatarHtml = avatar 
+      ? `<img src="${escapeHtml(avatar)}" class="bubble-avatar-img" onerror="this.style.display='none'" alt="" />`
+      : `<span style="font-size: 14px;">🪷</span>`;
+
+    const senderHtml = sender ? `<span class="bubble-sender">${escapeHtml(sender)}</span>` : '';
+
+    bubble.innerHTML = `
+      ${avatarHtml}
+      <div class="bubble-body">
+        ${senderHtml}
+        <span class="bubble-text">${escapeHtml(text)}</span>
+      </div>
+    `;
 
     streamSpeechLayer.appendChild(bubble);
 
@@ -377,7 +534,7 @@
     if (!isBgmEnabled) return;
     try {
       if (!bgmAudio) {
-        bgmAudio = new Audio(`assets/audio/${currentBgmTrack}`);
+        bgmAudio = new Audio(`${ASSETS_PATH}audio/${currentBgmTrack}`);
         bgmAudio.loop = true;
       }
       bgmAudio.volume = isBgmEnabled ? bgmVolume : 0;
@@ -399,7 +556,7 @@
     if (bgmAudio) {
       const wasPlaying = !bgmAudio.paused;
       bgmAudio.pause();
-      bgmAudio.src = `assets/audio/${newTrack}`;
+      bgmAudio.src = `${ASSETS_PATH}audio/${newTrack}`;
       bgmAudio.currentTime = 0;
       bgmAudio.loop = true;
       bgmAudio.volume = isBgmEnabled ? bgmVolume : 0;
@@ -596,34 +753,38 @@
   // ========================================================
   // 5. CÁC TÁC VỤ KÍCH HOẠT RPC
   // ========================================================
-  function triggerIncenseAction(sender, prayer, coins = 1) {
+  function triggerIncenseAction(sender, prayer, coins = 1, avatar = '') {
     playBellSound();
     recordDonation(sender, coins);
     totalIncense += 3;
     safeText(totalIncenseCount, totalIncense.toLocaleString('vi-VN'));
-    showPrayerBubble(`🪔 ${sender}: ${prayer || 'Thành tâm thắp 3 nén tâm hương cúng dường Tam Bảo 🙏'}`);
+    showPrayerBubble(prayer || 'Thành tâm thắp 3 nén tâm hương cúng dường Tam Bảo 🙏', null, avatar, sender);
     safeText(marqueeText, `🪔 Thí chủ ${sender} vừa phát tâm thắp 3 nén hương cúng dường Tam Bảo`);
+    animateWalkerOnCarpet(sender, avatar, '🪔 Thắp 3 nén hương Tam Bảo', prayer || 'Cầu gia đạo bình an, sở cầu như ý');
     speakVoice(`Thiện nam tín nữ ${sender} thành tâm thắp nén tâm hương cúng dường Tam Bảo`);
   }
 
-  function triggerLanternAction(sender, prayer, coins = 50) {
+  function triggerLanternAction(sender, prayer, coins = 50, avatar = '') {
     playBellSound();
     recordDonation(sender, coins);
-    showPrayerBubble(`🏮 ${sender}: Cầu bình an, thả hoa đăng lung linh cầu nguyện`);
+    showPrayerBubble('🏮 Cầu bình an, thả hoa đăng lung linh cầu nguyện', null, avatar, sender);
     safeText(marqueeText, `🏮 Thí chủ ${sender} dâng đèn hoa đăng cầu gia đạo bình an`);
+    animateWalkerOnCarpet(sender, avatar, '🏮 Thả đèn hoa đăng cầu an', prayer || 'Cầu phúc lộc dồi dào, gia quyến an khang');
     speakVoice(`Nguyện cầu hoa đăng tỏa sáng, gia quyến Phật tử ${sender} bình an vạn sự`);
   }
 
-  function triggerWoodblockAction(sender, count = 5) {
+  function triggerWoodblockAction(sender, count = 5, avatar = '') {
     for (let i = 0; i < count; i++) {
       setTimeout(playWoodblockSound, i * 220);
     }
-    showPrayerBubble(`🪵 ${sender}: Nam Mô A Di Đà Phật (${count} tiếng mõ)`);
+    showPrayerBubble(`Nam Mô A Di Đà Phật (${count} tiếng mõ)`, null, avatar, sender);
+    triggerCongregationWave();
   }
 
-  function triggerBellAction(sender) {
+  function triggerBellAction(sender, avatar = '') {
     playBellSound();
-    showPrayerBubble(`🔔 ${sender}: Thỉnh Đại Hồng Chung ngân vang thanh tịnh`);
+    showPrayerBubble('Thỉnh Đại Hồng Chung ngân vang thanh tịnh', null, avatar, sender);
+    triggerCongregationWave();
   }
 
   const FORTUNES_DATA = [
@@ -631,11 +792,12 @@
     { num: 8, title: 'THƯỢNG CÁT', poem: 'Tâm thành một nén trầm hương dâng,\nPhật chứng lòng son sáng tấc lòng.\nMở lối hanh thông ngàn cánh cửa,\nTiền tài danh vọng sáng rực hồng.', meaning: 'Kinh doanh phát đạt, gia quyến an khang, mọi trắc trở đều tiêu tan.', advice: 'Tạ ơn bề trên, trích phần tài lộc làm việc thiện cứu người.' }
   ];
 
-  function triggerDivinationAction(sender) {
+  function triggerDivinationAction(sender, avatar = '') {
     playBambooSticksSound();
     const f = FORTUNES_DATA[Math.floor(Math.random() * FORTUNES_DATA.length)];
     safeText(marqueeText, `🎋 ${sender} vừa rút: Quẻ số ${f.num} ${f.title}`);
-    showPrayerBubble(`🎋 ${sender}: Rút Quẻ số ${f.num} ${f.title}`);
+    showPrayerBubble(`Rút Quẻ số ${f.num} ${f.title}`, null, avatar, sender);
+    animateWalkerOnCarpet(sender, avatar, `🎋 Xin xăm: Quẻ số ${f.num}`, `Cầu xin quẻ xăm linh ứng`);
 
     setTimeout(() => {
       safeText(fortuneNum, `QUẺ SỐ 0${f.num}`);
@@ -649,30 +811,33 @@
     }, 700);
   }
 
-  function triggerLotusAction(sender, coins = 10) {
+  function triggerLotusAction(sender, coins = 10, avatar = '') {
     playBellSound();
     recordDonation(sender, coins);
-    showPrayerBubble(`🌸 ${sender}: Dâng đóa hoa sen vàng cúng Phật`);
+    showPrayerBubble('Dâng đóa hoa sen vàng cúng Phật 🌸', null, avatar, sender);
     safeText(marqueeText, `🌸 Thí chủ ${sender} dâng đóa sen vàng thanh khiết`);
+    animateWalkerOnCarpet(sender, avatar, '🌸 Dâng đóa sen hồng Tam Bảo', 'Dâng hoa sen thanh khiết');
   }
 
-  function triggerFruitAction(sender, coins = 30) {
+  function triggerFruitAction(sender, coins = 30, avatar = '') {
     playBellSound();
     recordDonation(sender, coins);
-    showPrayerBubble(`🍇 ${sender}: Dâng mâm ngũ quả tươi tốt cúng Tam Bảo 🍎`);
+    showPrayerBubble('Dâng mâm ngũ quả tươi tốt cúng Tam Bảo 🍇🍎', null, avatar, sender);
     safeText(marqueeText, `🍇 Thiện tín ${sender} dâng mâm ngũ quả cúng dường Tam Bảo`);
+    animateWalkerOnCarpet(sender, avatar, '🍇 Dâng mâm ngũ quả cúng dường', 'Cúng dường Tam Bảo phước huệ trang nghiêm');
     speakVoice(`Thiện nam tín nữ ${sender} thành kính dâng mâm ngũ quả cúng dường Tam Bảo, phước huệ trang nghiêm!`);
   }
 
-  function triggerDragonCeremony(sender, coins = 500) {
+  function triggerDragonCeremony(sender, coins = 500, avatar = '') {
     playBellSound();
     recordDonation(sender, coins);
 
     // Thả mưa sen nhiều hơn
     for (let i = 0; i < 40; i++) addLotusPetal();
 
-    showPrayerBubble(`🐉 ĐẠI LỄ KIM LONG: Thí chủ ${sender} đại phát tâm bồ đề! 🪷`);
+    showPrayerBubble(`🐉 ĐẠI LỄ KIM LONG: Thí chủ ${sender} đại phát tâm bồ đề! 🪷`, null, avatar, sender);
     safeText(marqueeText, `🐉 ĐẠI LỄ KIM LONG CHẦU PHẬT: Thí chủ ${sender} đại cúng dường Tam Bảo!`);
+    animateWalkerOnCarpet(sender, avatar, '🐉 Đại Lễ Kim Long Chầu Phật', 'Đại phát tâm bồ đề cúng dường Tam Bảo');
 
     speakVoice(`Đại lễ Kim Long Chầu Phật! Chúng con xin tán thán đại công đức của thí chủ ${sender}. Nguyện ơn Phật từ bi gia hộ vạn sự cát tường, phước thọ vô biên!`);
   }
@@ -931,37 +1096,47 @@
 
     switch (type) {
       case 'visitor_join':
-        showPrayerBubble(`🙏 ${data.name || data.dharmaName || 'Đồng tu'} vừa bước vào chùa`);
+        showPrayerBubble('Vừa bước vào Chánh Điện trang nghiêm 🙏', null, data.avatar, data.name || data.dharmaName || 'Đồng tu');
+        triggerCongregationWave();
         break;
       case 'ceremony_incense':
-        triggerIncenseAction(data.userName || data.name || 'Phật tử', data.intent || data.prayer || data.text, data.diamondCount || 1);
+        triggerIncenseAction(data.userName || data.name || 'Phật tử', data.intent || data.prayer || data.text, data.diamondCount || 1, data.avatar || '');
         break;
       case 'ceremony_bow':
-        triggerWoodblockAction(data.name || 'Phật tử', data.bowCount || 3);
+        triggerWoodblockAction(data.name || 'Phật tử', data.bowCount || 3, data.avatar || '');
         recordDonation(data.name || 'Phật tử', data.diamondCount || 5);
-        showPrayerBubble(`🙏 ${data.name || 'Phật tử'}: Chí tâm đảnh lễ Đức Thế Tôn tam bái`);
+        showPrayerBubble('Chí tâm đảnh lễ Đức Thế Tôn tam bái 🙏', null, data.avatar, data.name || 'Phật tử');
+        animateWalkerOnCarpet(data.name || 'Phật tử', data.avatar || '', '🙏 Lạy Phật Tam Bái', 'Chí tâm sám hối đảnh lễ Tam Bảo');
         break;
       case 'sound_woodblock':
-        triggerWoodblockAction(data.name || 'Phật tử', data.count || 3);
+        triggerWoodblockAction(data.name || 'Phật tử', data.count || 3, data.avatar || '');
         break;
       case 'ceremony_lotus':
-        triggerLotusAction(data.name || 'Phật tử', data.diamondCount || 10);
+        triggerLotusAction(data.name || 'Phật tử', data.diamondCount || 10, data.avatar || '');
         break;
       case 'ceremony_fruit':
-        triggerFruitAction(data.name || 'Phật tử', data.diamondCount || 30);
+        triggerFruitAction(data.name || 'Phật tử', data.diamondCount || 30, data.avatar || '');
         break;
       case 'ceremony_great':
-        triggerDragonCeremony(data.name || 'Phật tử', data.diamondCount || 500);
+        triggerDragonCeremony(data.name || 'Phật tử', data.diamondCount || 500, data.avatar || '');
         break;
       case 'sound_bell':
         playBellSound();
-        showPrayerBubble(`🔔 ${data.name || 'Phật tử'} thỉnh chuông`);
+        showPrayerBubble('Thỉnh chuông ngân vang thanh tịnh 🔔', null, data.avatar, data.name || 'Phật tử');
+        triggerCongregationWave();
+        break;
+      case 'like_burst':
+        triggerCongregationWave();
+        if (Math.random() < 0.3) {
+          showPrayerBubble('Đã thả tim niệm Phật ❤️', null, data.avatar, data.name || 'Phật tử');
+        }
         break;
       case 'divination_result':
         if (data.fortune) {
           const f = data.fortune;
           safeText(marqueeText, `🎋 ${data.name || 'Phật tử'} nhận Quẻ số ${f.number || '01'} - ${f.title || ''}`);
-          showPrayerBubble(`🎋 ${data.name || 'Phật tử'}: Rút Quẻ số ${f.number || '01'}`);
+          showPrayerBubble(`Rút Quẻ số ${f.number || '01'}: ${f.title}`, null, data.avatar, data.name || 'Phật tử');
+          animateWalkerOnCarpet(data.name || 'Phật tử', data.avatar || '', `🎋 Rút Quẻ số ${f.number || '01'}`, f.meaning);
           setTimeout(() => {
             safeText(fortuneNum, `QUẺ SỐ ${f.number < 10 ? '0' + f.number : f.number}`);
             safeText(fortuneTitle, f.title);
@@ -973,7 +1148,7 @@
             speakVoice(`Phật Bà Quan Âm ban quẻ cho Phật tử ${data.name || 'thiện tín'}: Quẻ số ${f.number} ${f.title}. ${f.meaning}`);
           }, 700);
         } else {
-          showPrayerBubble(`🎋 ${data.name || 'Phật tử'} vừa gieo quẻ xăm`);
+          showPrayerBubble('Vừa gieo quẻ xăm linh ứng 🎋', null, data.avatar, data.name || 'Phật tử');
         }
         break;
       case 'so_chanting':
@@ -981,7 +1156,7 @@
         break;
       case 'chat_message':
         const chatText = data.text || data.comment || '';
-        if (chatText) showPrayerBubble(`${data.name || 'Phật tử'}: ${chatText}`);
+        if (chatText) showPrayerBubble(chatText, null, data.avatar, data.name || 'Phật tử');
         break;
       case 'tiktok_status':
         const streamTikTokName = document.getElementById('streamTikTokName');
