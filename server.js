@@ -40,6 +40,39 @@ const meritBook = new Map(); // key: id/username/ip, value: { name, avatar, gift
 const activeVisitors = new Map(); // Quản lý bồ đoàn hiện thời (tối đa 48 chỗ)
 const MAX_CUSHIONS = 48;
 
+// Dữ liệu phiên Live thực tế (tích lũy thời gian thực từ TikTok Live)
+const sessionStats = {
+  totalIncense: 0,
+  totalCoins: 0,
+  woodblockHits: 0,
+  bellRings: 0,
+  activeStreamer: '',
+  viewerCount: 0
+};
+
+function getTopDonors(limit = 6) {
+  return Array.from(meritBook.values())
+    .sort((a, b) => b.totalDiamonds - a.totalDiamonds)
+    .slice(0, limit)
+    .map((m, idx) => ({
+      rank: idx + 1,
+      name: m.name,
+      avatar: m.avatar || '',
+      coins: m.totalDiamonds,
+      rankTitle: idx === 0 ? 'Thượng Thủ' : `Cấp ${Math.max(1, 5 - idx)}`,
+      isChamp: idx === 0
+    }));
+}
+
+function broadcastStatsSync() {
+  broadcast('stats_sync', {
+    stats: sessionStats,
+    topDonors: getTopDonors(6),
+    streamer: tiktokState.username || sessionStats.activeStreamer,
+    viewerCount: tiktokState.viewerCount || sessionStats.viewerCount
+  });
+}
+
 // Helper: Chuẩn hóa IP
 function cleanIp(rawIp) {
   if (!rawIp) return '127.0.0.1';
@@ -157,6 +190,29 @@ app.get('/api/tiktok/status', (req, res) => {
   res.json(tiktokState);
 });
 
+// API: Lấy thống kê phiên Live
+app.get('/api/stats', (req, res) => {
+  res.json({
+    stats: sessionStats,
+    topDonors: getTopDonors(6),
+    streamer: tiktokState.username || sessionStats.activeStreamer,
+    viewerCount: tiktokState.viewerCount
+  });
+});
+
+// API: Đặt lại toàn bộ số liệu phiên Live (Reset về 0 khi bắt đầu phiên mới)
+app.post('/api/stats/reset', (req, res) => {
+  sessionStats.totalIncense = 0;
+  sessionStats.totalCoins = 0;
+  sessionStats.woodblockHits = 0;
+  sessionStats.bellRings = 0;
+  meritBook.clear();
+  updateVipSeats();
+  broadcastStatsSync();
+  console.log('[SESSION] 🔄 Đã đặt lại toàn bộ số liệu phiên Live về 0!');
+  res.json({ success: true, stats: sessionStats });
+});
+
 // WebSocket Server
 function broadcast(type, data) {
   const message = JSON.stringify({ type, data, timestamp: Date.now() });
@@ -175,7 +231,7 @@ wss.on('connection', (ws, req) => {
   const dharma = getDharmaNameForIp(ip);
   const visitorId = `ip_${ip.replace(/[^a-zA-Z0-9]/g, '_')}`;
 
-  // Gửi thông tin chào mừng và trạng thái hiện tại
+  // Gửi thông tin chào mừng, số liệu phiên thực tế và danh sách VIP
   ws.send(JSON.stringify({
     type: 'init',
     data: {
@@ -187,6 +243,10 @@ wss.on('connection', (ws, req) => {
         dharmaName: dharma
       },
       templeName: TEMPLE_NAME,
+      stats: sessionStats,
+      topDonors: getTopDonors(6),
+      streamer: tiktokState.username || sessionStats.activeStreamer,
+      viewerCount: tiktokState.viewerCount,
       merits: Array.from(meritBook.values()).slice(0, 10),
       activeVisitors: Array.from(activeVisitors.values())
     }
@@ -257,6 +317,8 @@ function handleClientAction(msg, defaultId, defaultName) {
   switch (action) {
     case 'incense': // Thắp nhang
       recordMerit(userId, userName, 1, 'Dâng nén tâm hương cầu an');
+      sessionStats.totalIncense += 3;
+      broadcastStatsSync();
       broadcast('ceremony_incense', {
         userId,
         name: userName,
@@ -295,11 +357,25 @@ function handleClientAction(msg, defaultId, defaultName) {
       break;
 
     case 'bell': // Thỉnh chuông
+      sessionStats.bellRings += 1;
+      broadcastStatsSync();
       broadcast('sound_bell', { userId, name: userName });
       break;
 
     case 'woodblock': // Gõ mõ
+      sessionStats.woodblockHits += (msg.count || 3);
+      broadcastStatsSync();
       broadcast('sound_woodblock', { userId, name: userName, count: msg.count || 3 });
+      break;
+
+    case 'reset_stats': // Đặt lại số liệu phiên Live về 0
+      sessionStats.totalIncense = 0;
+      sessionStats.totalCoins = 0;
+      sessionStats.woodblockHits = 0;
+      sessionStats.bellRings = 0;
+      meritBook.clear();
+      updateVipSeats();
+      broadcastStatsSync();
       break;
 
     case 'divination': // Rút quẻ xăm Quan Âm
@@ -338,8 +414,9 @@ function handleClientAction(msg, defaultId, defaultName) {
   }
 }
 
-// Ghi nhận vào Sổ Công Đức
+// Ghi nhận vào Sổ Công Đức & cập nhật Thống kê Phiên Live thật
 function recordMerit(id, name, diamonds, intent, avatar = '') {
+  sessionStats.totalCoins += diamonds;
   if (!meritBook.has(id)) {
     meritBook.set(id, {
       id,
@@ -356,13 +433,14 @@ function recordMerit(id, name, diamonds, intent, avatar = '') {
   if (avatar && !entry.avatar) entry.avatar = avatar;
   entry.timestamp = Date.now();
 
-  // Kiểm tra nếu là VIP (nằm trong Top 5 dâng lễ nhiều nhất)
+  // Kiểm tra nếu là VIP (nằm trong Top 6 dâng lễ nhiều nhất)
   updateVipSeats();
+  broadcastStatsSync();
 }
 
 function updateVipSeats() {
   const sorted = Array.from(meritBook.values()).sort((a, b) => b.totalDiamonds - a.totalDiamonds);
-  const topIds = new Set(sorted.slice(0, 5).map(m => m.id));
+  const topIds = new Set(sorted.slice(0, 6).map(m => m.id));
 
   for (const [id, v] of activeVisitors.entries()) {
     v.isVip = topIds.has(id);
@@ -572,7 +650,9 @@ async function connectTikTok(uniqueId) {
         roomId: state?.roomId || conn?.roomId || '',
         viewerCount: tiktokState.viewerCount
       };
+      sessionStats.activeStreamer = cleanUser;
       broadcast('tiktok_status', tiktokState);
+      broadcastStatsSync();
       console.log(`[TIKTOK] ✅ Đã kết nối thành công phòng Live @${cleanUser} (Room ID: ${tiktokState.roomId})`);
     });
 
@@ -598,7 +678,9 @@ async function connectTikTok(uniqueId) {
       const viewerCount = Number(data?.total ?? data?.viewerCount ?? 0);
       if (viewerCount > 0) {
         tiktokState.viewerCount = viewerCount;
+        sessionStats.viewerCount = viewerCount;
         broadcast('tiktok_viewers', { viewerCount });
+        broadcastStatsSync();
       }
     });
 
@@ -636,12 +718,14 @@ async function connectTikTok(uniqueId) {
     conn.on(WebcastEvent.LIKE, data => {
       const { name, avatar } = extractUserFromEvent(data);
       const likeCount = Math.min(20, Math.max(1, Number(data?.likeCount || data?.count || 1)));
+      sessionStats.woodblockHits += 1;
       broadcast('like_burst', {
         likeCount,
         name,
         avatar
       });
       broadcast('sound_woodblock', { userId: 'like', name, avatar, count: 1 });
+      broadcastStatsSync();
     });
 
     // Sự kiện: Viewer gửi quà tặng (Gift)
@@ -657,7 +741,12 @@ async function connectTikTok(uniqueId) {
 
       console.log(`[TIKTOK GIFT] 🎁 ${name} gửi ${giftName} x${data.repeatCount || 1} (Giá trị: ${diamonds} xu)`);
 
-      // Ghi nhận công đức
+      // Tăng hương nếu là quà hương (1-4 xu)
+      if (diamonds <= 4) {
+        sessionStats.totalIncense += 3;
+      }
+
+      // Ghi nhận công đức và đồng bộ phiên Live
       recordMerit(userId, name, diamonds, `Cúng dường ${giftName}`, avatar);
 
       // Ánh xạ quà tặng theo giá trị xu TikTok vào các đại lễ Phật giáo

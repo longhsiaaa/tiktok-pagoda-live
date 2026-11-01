@@ -140,6 +140,38 @@
     `).join('');
   }
 
+  // Đồng bộ hóa danh sách Top Hảo Tâm & Hàng Ghế VIP từ WebSocket thực tế
+  function updateTopDonorsUI(topDonors) {
+    if (!topDonors || !Array.isArray(topDonors)) return;
+
+    if (topDonors.length > 0) {
+      const top1 = topDonors[0];
+      currentTopDonor = { name: top1.name, coins: top1.coins };
+      safeText(topDonorName, top1.name);
+      safeText(topDonorCoins, Number(top1.coins).toLocaleString('vi-VN'));
+
+      const boardList = document.getElementById('boardDonorList') || document.querySelector('.board-donor-list');
+      if (boardList) {
+        const rankIcons = ['①', '②', '③', '④'];
+        boardList.innerHTML = topDonors.slice(0, 4).map((d, idx) => `
+          <li><span class="rank">${rankIcons[idx] || (idx + 1)}</span> <span class="d-name">${escapeHtml(d.name)}</span> <span class="d-coins">${Number(d.coins).toLocaleString('vi-VN')}</span></li>
+        `).join('');
+      }
+
+      // Cập nhật lại hàng ghế VIP Thượng Điện bằng danh sách người thật
+      renderVipTerrace(topDonors);
+    } else {
+      currentTopDonor = { name: 'Chờ thí chủ...', coins: 0 };
+      safeText(topDonorName, 'Chờ thí chủ...');
+      safeText(topDonorCoins, '0');
+      const boardList = document.getElementById('boardDonorList') || document.querySelector('.board-donor-list');
+      if (boardList) {
+        boardList.innerHTML = `<li style="justify-content:center;color:#bcaaa4;font-style:italic">Tâm thành cúng dường Tam Bảo 🙏</li>`;
+      }
+      renderVipTerrace([]);
+    }
+  }
+
   // Kiểm tra URL nếu có ?obs=1 hoặc ?stream=1 thì tự động vào chế độ Stream Only
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('obs') === '1' || urlParams.get('stream') === '1') {
@@ -360,7 +392,7 @@
   // ========================================================
   // 2. RENDER ĐÁM ĐÔNG PHẬT TỬ & HÀNG VIP THƯỢNG ĐIỆN
   // ========================================================
-  const VIP_DONORS = [
+  let currentVipDonors = [
     { name: 'Tiến Trương', coins: 5043, rank: 'Cấp 5', isChamp: true },
     { name: 'Anh Thơ 1227', coins: 833, rank: 'Cấp 4', isChamp: false },
     { name: 'tao nồng ảnh...', coins: 550, rank: 'Cấp 4', isChamp: false },
@@ -369,23 +401,33 @@
     { name: 'Tha choco', coins: 210, rank: 'Cấp 2', isChamp: false }
   ];
 
-  function renderVipTerrace() {
+  function renderVipTerrace(dynamicList) {
     if (!vipTerraceRow) return;
+    if (dynamicList && Array.isArray(dynamicList)) {
+      currentVipDonors = dynamicList;
+    }
     vipTerraceRow.innerHTML = '';
-    VIP_DONORS.forEach((d, idx) => {
+
+    for (let idx = 0; idx < 6; idx++) {
+      const d = currentVipDonors[idx];
       const slot = document.createElement('div');
-      slot.className = `vip-seat-slot ${d.isChamp ? 'top-champion' : ''}`;
+      const isChamp = idx === 0 && d && d.coins > 0;
+      slot.className = `vip-seat-slot ${isChamp ? 'top-champion' : ''}`;
       slot.id = `vip-seat-${idx}`;
       const delay = (Math.random() * 3.5).toFixed(2);
       const dur = (3.2 + Math.random() * 1.2).toFixed(2);
       const breatheHeight = (-(1.4 + Math.random() * 0.8)).toFixed(1);
+
+      const displayName = d ? d.name : `Bồ đoàn ${idx + 1}`;
+      const tagText = d && d.coins > 0 ? `${escapeHtml(displayName)}` : escapeHtml(displayName);
+
       slot.innerHTML = `
         <img class="vip-devotee-sprite" id="vip-devotee-${idx}" src="${SPRITE_FRAMES.kneel}" alt="VIP" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px" />
         <div class="vip-pillow"></div>
-        <span class="vip-name-tag">${escapeHtml(d.name)}</span>
+        <span class="vip-name-tag">${tagText}</span>
       `;
       vipTerraceRow.appendChild(slot);
-    });
+    }
   }
 
   const REGULAR_NAMES = [
@@ -856,6 +898,8 @@
   }
 
   function triggerWoodblockAction(sender, count = 5, avatar = '') {
+    woodblockHits += count;
+    safeText(woodblockHitCount, woodblockHits.toLocaleString('vi-VN'));
     for (let i = 0; i < count; i++) {
       setTimeout(playWoodblockSound, i * 220);
     }
@@ -939,11 +983,15 @@
     safeOn(btnClickBell, 'click', () => {
       playBellSound();
       showPrayerBubble('🔔 Thỉnh Chuông Ngân Nga');
+      sendWsMessage('bell', {});
     });
 
     safeOn(btnClickWoodblock, 'click', () => {
+      woodblockHits += 1;
+      safeText(woodblockHitCount, woodblockHits.toLocaleString('vi-VN'));
       playWoodblockSound();
       showPrayerBubble('🪵 Nam Mô A Di Đà Phật');
+      sendWsMessage('woodblock', { count: 1 });
     });
 
     // 1. Nhóm âm thanh bên bảng phải
@@ -1069,6 +1117,16 @@
       btnToggleSimulate.textContent = isSimulating ? '📺 Tự động Giả lập Người Xem: BẬT' : '📺 Tự động Giả lập Người Xem: TẮT';
     });
 
+    const btnResetSession = document.getElementById('btnResetSession');
+    safeOn(btnResetSession, 'click', async () => {
+      if (confirm('Bạn có muốn làm mới số liệu phiên Live (đưa Hương, Gõ Mõ, CĐ và Top Donate về 0 để bắt đầu phiên mới)?')) {
+        sendWsMessage('reset_stats', {});
+        try {
+          await fetch('/api/stats/reset', { method: 'POST' });
+        } catch (e) {}
+      }
+    });
+
     // 4. Kích hoạt 8 nút RPC
     safeOn(btnRpcIncense, 'click', () => {
       const sender = (rpcSenderName && rpcSenderName.value) ? rpcSenderName.value : 'Phật tử';
@@ -1177,6 +1235,28 @@
     if (!data) return;
 
     switch (type) {
+      case 'init':
+      case 'stats_sync':
+        if (data.stats) {
+          totalCoins = Number(data.stats.totalCoins || 0);
+          totalIncense = Number(data.stats.totalIncense || 0);
+          woodblockHits = Number(data.stats.woodblockHits || 0);
+          safeText(totalCoinsCount, totalCoins.toLocaleString('vi-VN'));
+          safeText(totalIncenseCount, totalIncense.toLocaleString('vi-VN'));
+          safeText(woodblockHitCount, woodblockHits.toLocaleString('vi-VN'));
+        }
+        if (data.streamer) {
+          const streamTikTokName = document.getElementById('streamTikTokName');
+          if (streamTikTokName) streamTikTokName.textContent = `@${data.streamer}`;
+        }
+        if (data.viewerCount !== undefined && Number(data.viewerCount) > 0) {
+          const streamViewCount = document.getElementById('streamViewCount');
+          if (streamViewCount) safeText(streamViewCount, Number(data.viewerCount).toLocaleString('vi-VN'));
+        }
+        if (data.topDonors && Array.isArray(data.topDonors)) {
+          updateTopDonorsUI(data.topDonors);
+        }
+        break;
       case 'visitor_join':
         showPrayerBubble('Vừa bước vào Chánh Điện trang nghiêm 🙏', null, data.avatar, data.name || data.dharmaName || 'Đồng tu');
         triggerCongregationWave();
