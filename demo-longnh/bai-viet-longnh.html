@@ -1,0 +1,95 @@
+<!-- BÀI VIẾT LONGNH.COM: HƯỚNG DẪN LIVESTREAM LỄ CHÙA ONLINE TỰ ĐỘNG 100% -->
+<article class="post-content">
+  <p class="intro-lead"><strong>Thời gian gần đây trên nền tảng TikTok</strong>, các phòng livestream với chủ đề <em>"Đi chùa online / Dâng hương cầu an / Rút quẻ đầu tháng"</em> đang tạo nên cơn sốt mạnh mẽ, thu hút hàng chục nghìn lượt xem cùng lúc và lượng tương tác quà tặng (gift) khổng lồ. Người xem chỉ cần gửi một nhành hoa hồng hay vài hạt xu là trên màn hình lập tức xuất hiện làn khói nhang nghi ngút, chuông mõ vang rền và nhân vật quỳ lạy trang nghiêm.</p>
+
+  <p>Sau bài viết chia sẻ về mô hình <em>Thánh Đường Nhà Thờ Online</em>, rất nhiều bạn đọc và anh em sáng tạo nội dung đã nhắn tin hỏi mình: <strong>"Liệu có thể xây dựng một hệ thống Chùa Việt Nam thuần khiết và trang nghiêm với đầy đủ bàn thờ Tam Bảo, bồ đoàn ngồi thiền, chuông mõ gia trì, khói trầm hương uốn lượn, xướng sớ cầu an bằng giọng đọc AI và đặc biệt là chế độ Web Local tự nhận diện IP người xem để cấp tên Phật tử đi chùa hay không?"</strong></p>
+
+  <p>Câu trả lời là <strong>hoàn toàn làm được và thậm chí vượt xa kỳ vọng!</strong> Hôm nay, LongNH xin chia sẻ toàn bộ kiến trúc kỹ thuật và mã nguồn mở trọn gói của dự án <code>tiktok-pagoda-live</code> từ A - Z.</p>
+
+  <hr />
+
+  <h2>1. Bốn Điểm Nhấn Độc Đáo Của Chùa Dâng Hương Trực Tuyến</h2>
+
+  <h3>1.1. Không Gian Tam Bảo & 48 Bồ Đoàn Thiền Định (Congregation Engine)</h3>
+  <p>Thay vì là khung chat buồn tẻ ở góc màn hình, khán giả khi vào phòng live sẽ được cấp ngay một chiếc <strong>Bồ Đoàn</strong> (đệm ngồi thiền) trong Chánh Điện:</p>
+  <ul>
+    <li><strong>Phối cảnh 3D Chánh Điện:</strong> Tượng Đức Phật Bổn Sư Thích Ca Mâu Ni ngự tọa trên đài sen dát vàng, vòng hào quang xoay dịu êm, hoành phi câu đối sơn son thếp vàng <em>"Vạn Phúc Tự - Từ Bi Hỷ Xả"</em>.</li>
+    <li><strong>Nhân vật Phật tử:</strong> Mặc áo lam hoặc áo tràng nâu sồng, ngồi kiết già chắp tay búp sen niệm Phật.</li>
+    <li><strong>Bong bóng chat thời gian thực:</strong> Khi người xem gõ <em>"Nam Mô A Di Đà Phật"</em>, <em>"Cầu bình an"</em>..., một bong bóng thoại sẽ bay lên từ đúng chỗ người đó đang ngồi.</li>
+    <li><strong>Hàng bồ đoàn VIP sen vàng:</strong> Dành riêng cho Top 5 thiện nam tín nữ cúng dường nhiều nhất trong buổi lễ.</li>
+  </ul>
+
+  <h3>1.2. Ánh Xạ Quà Tặng TikTok Sang Nghi Lễ Dâng Hương Cúng Dường</h3>
+  <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+    <thead>
+      <tr style="background: #2d1810; color: #ffd700;">
+        <th style="padding: 10px; border: 1px solid #cfa635;">Quà Tặng TikTok</th>
+        <th style="padding: 10px; border: 1px solid #cfa635; text-align: center;">Giá Trị (Xu)</th>
+        <th style="padding: 10px; border: 1px solid #cfa635;">Hành Động Trên Màn Hình</th>
+        <th style="padding: 10px; border: 1px solid #cfa635;">Hiệu Ứng Âm Thanh & AI</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd;">🌹 <strong>Hoa Hồng / Nến (Rose)</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">1</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">Thắp 1 nén nhang trầm vào lư đồng Tam Bảo</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">1 tiếng chuông khánh thanh mảnh</td>
+      </tr>
+      <tr style="background: #fdfaf6;">
+        <td style="padding: 8px; border: 1px solid #ddd;">🌸 <strong>Donut / Hoa Vàng</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">5</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">Dâng đóa hoa sen hồng thanh tịnh lên đài sen</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">Chuông ngân, Phật tử xá chào</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd;">🙏 <strong>Trái Tim / Origami</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">10</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">Phật tử đứng dậy, tiến lên Tam Bảo <strong>lạy Phật tam bái</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">3 tiếng mõ gia trì an lạc</td>
+      </tr>
+      <tr style="background: #fdfaf6;">
+        <td style="padding: 8px; border: 1px solid #ddd;">🍎 <strong>Vương Miện / Mâm Quả</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">30</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">Dâng <strong>Mâm Ngũ Quả</strong> cúng dường & ghi danh Sổ Vàng</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">Đổ chuông dồn dập, hào quang tỏa sáng</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd;">🪷 <strong>Sư Tử / Phượng Hoàng</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">100+</td>
+        <td style="padding: 8px; border: 1px solid #ddd;"><strong>Đại Lễ Cúng Dường:</strong> Mưa hoa sen toàn màn hình</td>
+        <td style="padding: 8px; border: 1px solid #ddd;"><strong>AI xướng Sớ Cầu An:</strong> <em>"Thiện nam tín nữ phát tâm cúng dường..."</em></td>
+      </tr>
+      <tr style="background: #fdfaf6;">
+        <td style="padding: 8px; border: 1px solid #ddd;">🎋 <strong>Gõ "Xin que"</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">Miễn phí</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">Lắc ống thẻ tre, rơi ra <strong>1 Quẻ Xăm Linh Ứng</strong></td>
+        <td style="padding: 8px; border: 1px solid #ddd;">Tiếng lắc thẻ tre lách cách</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>1.3. Chế Độ Web Local Dùng IP Người Xem Làm Tên Đi Chùa</h3>
+  <p>Khi không mở live TikTok hoặc khi bạn muốn nhúng trực tiếp không gian này lên website, bất kỳ ai truy cập cũng sẽ được máy chủ tự động nhận diện IP: <code>Phật tử Diệu Tâm (113.161.45.xx)</code>. Khán giả có thể tự tay bấm các nút: <strong>Thắp Nén Nhang, Lạy Tam Bái, Dâng Sen, Thỉnh Chuông, Gõ Mõ, Rút Quẻ Xăm</strong> ngay trên trình duyệt mà không cần cài đặt bất kỳ phần mềm nào.</p>
+
+  <h3>1.4. Không Cần File MP3 (100% Web Audio API)</h3>
+  <p>Toàn bộ âm thanh chuông đại hồng chung, mõ gia trì và tiếng lắc thẻ tre đều được tổng hợp bằng code Web Audio API thuần túy, nhẹ tênh và tương thích hoàn hảo trên OBS Studio.</p>
+
+  <hr />
+
+  <h2>2. Hướng Dẫn Cài Đặt Nhanh Từ A Đến Z</h2>
+  <pre><code>git clone https://github.com/longhsiaaa/tiktok-pagoda-live.git
+cd tiktok-pagoda-live
+npm install
+npm start</code></pre>
+
+  <p>Sau đó mở <strong>OBS Studio</strong>, thêm nguồn <strong>Browser Source</strong> với URL <code>http://localhost:3001</code>, tỷ lệ khung hình <strong>1080 x 1920</strong> và tích chọn <strong>Control audio via OBS</strong>.</p>
+
+  <hr />
+
+  <h2>3. Link Tải Mã Nguồn & Bản Demo</h2>
+  <ul>
+    <li><strong>GitHub Repository:</strong> <a href="https://github.com/longhsiaaa/tiktok-pagoda-live" target="_blank">github.com/longhsiaaa/tiktok-pagoda-live</a></li>
+    <li><strong>Website chính thức:</strong> <a href="https://longnh.com" target="_blank">longnh.com</a></li>
+  </ul>
+</article>

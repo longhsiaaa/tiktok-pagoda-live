@@ -1,0 +1,28 @@
+{
+  "name": "tiktok-pagoda-live",
+  "version": "1.0.0",
+  "description": "Hệ thống Livestream tương tác 'Lễ Chùa Dâng Hương Online' tự động 100% cho TikTok Live & Web Browser (Local IP Visitor Mode)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js --simulate"
+  },
+  "keywords": [
+    "tiktok-live",
+    "interactive-livestream",
+    "pagoda-simulator",
+    "buddhist-temple",
+    "obs-overlay",
+    "le-chua-online",
+    "dang-huong",
+    "vietnam"
+  ],
+  "author": "LongNH (longnh.com)",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "tiktok-live-connector": "^1.1.8",
+    "ws": "^8.18.0"
+  }
+}
