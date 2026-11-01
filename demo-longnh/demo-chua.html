@@ -3,171 +3,117 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bản Demo Tương Tác: Lễ Chùa Dâng Hương Online - longnh.com</title>
+  <title>Bản Demo Tương Tác 3D: Lễ Chùa Dâng Hương Online - longnh.com</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
-    /* NHÚNG TRỰC TIẾP TOÀN BỘ CSS ĐỂ BẢN DEMO HOẠT ĐỘNG HOÀN TOÀN ĐỘC LẬP TRÊN LONGNH.COM */
+    /* NHÚNG TOÀN BỘ CSS CHO BẢN DEMO 3D ĐỘC LẬP TRÊN LONGNH.COM */
     :root {
       --color-gold: #ffd700;
       --color-gold-deep: #cfa635;
-      --color-gold-glow: rgba(255, 215, 0, 0.45);
-      --color-vermilion: #8b0000;
-      --color-wood-dark: #1a0f0a;
-      --color-wood-mid: #2d1810;
+      --color-dark-lacquer: rgba(22, 10, 6, 0.92);
       --color-lotus-pink: #fd79a8;
-      --font-serif: 'Playfair Display', Georgia, serif;
+      --font-serif: 'Playfair Display', serif;
       --font-display: 'Cinzel', serif;
       --font-sans: 'Roboto', sans-serif;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      width: 100vw; height: 100vh; overflow: hidden;
-      background: radial-gradient(circle at 50% 30%, rgba(74, 40, 24, 0.85) 0%, rgba(26, 15, 10, 0.98) 75%),
-                  linear-gradient(to bottom, #110805, #1e0e08 60%, #150a06);
-      font-family: var(--font-sans); color: #f5f6fa; user-select: none;
-    }
-    .pagoda-container { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-    .effect-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15; }
-    
+    body { width: 100vw; height: 100vh; overflow: hidden; background: #0d0604; font-family: var(--font-sans); color: #f5f6fa; user-select: none; }
+    #webgl-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+    .overlay-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
+    .overlay-container > * { pointer-events: auto; }
+
+    /* Header */
+    .top-nav-bar { display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 18px; background: linear-gradient(180deg, rgba(13,6,4,0.9), transparent); }
+    .user-badge { display: flex; align-items: center; gap: 12px; background: var(--color-dark-lacquer); border: 1.5px solid var(--color-gold-deep); border-radius: 30px; padding: 6px 16px 6px 8px; backdrop-filter: blur(8px); }
+    .user-avatar-circle { width: 36px; height: 36px; border-radius: 50%; background: #3e1b10; border: 1.5px solid var(--color-gold); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .user-dharma-name { font-size: 13px; font-weight: 700; color: var(--color-gold); font-family: var(--font-serif); }
+    .user-level-tag { font-size: 9px; color: #f5cd79; background: rgba(255,215,0,0.15); padding: 1px 6px; border-radius: 10px; border: 1px solid rgba(255,215,0,0.3); margin-left: 6px; }
+    .temple-tag { font-size: 10px; color: #bbb; margin-top: 2px; }
+    .top-btn { background: var(--color-dark-lacquer); border: 1px solid rgba(255,215,0,0.4); color: #ffd700; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; backdrop-filter: blur(8px); }
+
     /* HUD */
-    .live-hud-panel {
-      position: absolute; top: 15px; right: 15px; width: 320px;
-      background: linear-gradient(135deg, rgba(35, 16, 10, 0.92), rgba(20, 8, 5, 0.96));
-      border: 2px solid var(--color-gold-deep); border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.7), 0 0 15px rgba(255, 215, 0, 0.2);
-      z-index: 25; padding: 12px 14px; backdrop-filter: blur(8px);
-    }
-    .hud-header { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255, 215, 0, 0.25); padding-bottom: 6px; margin-bottom: 6px; }
-    .hud-icon { font-size: 24px; }
-    .hud-subtitle { font-size: 9px; letter-spacing: 2px; color: var(--color-gold); font-family: var(--font-display); }
-    .hud-title { font-size: 13px; font-weight: 700; color: #fff; }
-    .hud-grid { display: flex; flex-direction: column; gap: 5px; }
-    .hud-item { display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.04); padding: 5px 8px; border-radius: 6px; border-left: 3px solid var(--color-gold); font-size: 11px; }
-    .hud-item.hud-highlight { border-left-color: var(--color-lotus-pink); background: linear-gradient(90deg, rgba(232, 67, 147, 0.15), rgba(255, 215, 0, 0.1)); }
+    .live-hud-panel { position: absolute; top: 75px; right: 18px; width: 320px; background: linear-gradient(135deg, rgba(35,16,10,0.92), rgba(20,8,5,0.96)); border: 2px solid var(--color-gold-deep); border-radius: 12px; z-index: 25; padding: 10px 12px; backdrop-filter: blur(8px); }
+    .hud-header { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,215,0,0.25); padding-bottom: 6px; margin-bottom: 6px; }
+    .hud-subtitle { font-size: 8px; letter-spacing: 2px; color: var(--color-gold); font-family: var(--font-display); }
+    .hud-title { font-size: 12px; font-weight: 700; color: #fff; }
+    .hud-grid { display: flex; flex-direction: column; gap: 4px; }
+    .hud-item { display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.04); padding: 4px 6px; border-radius: 5px; border-left: 3px solid var(--color-gold); font-size: 10.5px; }
+    .hud-item.hud-highlight { border-left-color: var(--color-lotus-pink); background: linear-gradient(90deg, rgba(232,67,147,0.15), rgba(255,215,0,0.1)); }
     .gift-badge { font-weight: 700; color: var(--color-gold); }
-    .action-desc { color: #dcdde1; text-align: right; }
-    .hud-footer { margin-top: 6px; padding-top: 5px; border-top: 1px dashed rgba(255, 255, 255, 0.15); font-size: 10px; color: #fbc531; display: flex; flex-direction: column; gap: 3px; }
+    .action-desc { color: #dcdde1; text-align: right; font-size: 10px; }
+    .hud-footer { margin-top: 6px; padding-top: 5px; border-top: 1px dashed rgba(255,255,255,0.15); font-size: 9.5px; color: #fbc531; display: flex; flex-direction: column; gap: 2px; }
 
-    /* Badge IP */
-    .visitor-ip-badge {
-      position: absolute; top: 15px; left: 15px; background: rgba(30, 15, 10, 0.85);
-      border: 1px solid rgba(255, 215, 0, 0.4); border-radius: 20px; padding: 6px 14px;
-      display: flex; align-items: center; gap: 8px; z-index: 22; backdrop-filter: blur(5px);
-    }
-    .ip-label { font-size: 9px; color: #aaa; text-transform: uppercase; }
-    .ip-name { font-size: 12px; color: var(--color-gold); font-weight: bold; }
+    /* Bubbles 3D */
+    .bubbles-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 15; }
+    .char-3d-nametag { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+    .nametag-dharma { font-size: 10px; font-weight: 700; color: #fff; background: rgba(10,5,3,0.85); border: 1px solid rgba(255,215,0,0.4); padding: 1px 6px; border-radius: 6px; white-space: nowrap; }
+    .nametag-level { font-size: 8px; color: var(--color-gold); background: rgba(0,0,0,0.6); padding: 0 4px; border-radius: 4px; margin-top: 1px; }
+    .char-crown-badge { font-size: 14px; margin-bottom: -3px; filter: drop-shadow(0 0 6px #ffd700); }
+    .prayer-speech-bubble { position: absolute; transform: translate(-50%, -125%); background: linear-gradient(135deg, rgba(28,12,7,0.94), rgba(15,6,3,0.96)); border: 1.5px solid var(--color-gold); color: #fff; font-size: 11px; font-weight: 600; padding: 6px 12px; border-radius: 12px; white-space: nowrap; box-shadow: 0 6px 20px rgba(0,0,0,0.8); z-index: 20; animation: popPrayer 4.5s cubic-bezier(0.18,0.89,0.32,1.28) forwards; }
+    .prayer-speech-bubble::after { content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%); border-width: 6px 6px 0 6px; border-style: solid; border-color: var(--color-gold) transparent transparent transparent; }
 
-    /* Chánh Điện */
-    .main-sanctuary {
-      position: relative; flex: 1; display: flex; flex-direction: column; align-items: center;
-      padding: 10px 20px 100px 20px; overflow-y: auto; perspective: 1000px;
-    }
-    .sanctuary-roof { width: 100%; max-width: 800px; display: flex; align-items: center; justify-content: center; margin: 10px 0; }
-    .horizontal-board {
-      background: linear-gradient(180deg, #6b0c0c, #4a0606); border: 4px solid var(--color-gold-deep);
-      border-radius: 8px; padding: 8px 30px; text-align: center; box-shadow: 0 8px 25px rgba(0,0,0,0.7);
-    }
-    .board-sub { font-size: 11px; letter-spacing: 4px; color: #fad390; font-family: var(--font-display); }
-    .board-main { font-size: 26px; font-weight: 700; letter-spacing: 6px; color: #fff; font-family: var(--font-serif); text-shadow: 0 0 12px rgba(255, 215, 0, 0.8); }
-    .board-tag { font-size: 10px; letter-spacing: 3px; color: var(--color-gold); }
+    /* Bottom Action Bar */
+    .bottom-action-bar { background: linear-gradient(180deg, transparent, rgba(16,7,4,0.95) 30%, rgba(12,5,3,0.98)); padding: 12px 20px 16px 20px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+    .action-pills-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .pill-btn { display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, rgba(46,20,11,0.9), rgba(28,11,6,0.95)); border: 1.5px solid var(--color-gold-deep); border-radius: 24px; padding: 8px 16px; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.6); backdrop-filter: blur(6px); transition: all 0.2s; }
+    .pill-btn:hover { background: #4a2011; border-color: #ffd700; transform: translateY(-3px); box-shadow: 0 0 12px rgba(255,215,0,0.5); }
+    .pill-btn.pill-btn-primary { background: linear-gradient(135deg, #8b1111, #520909); border-color: #ffd700; }
 
-    /* Tượng Phật */
-    .altar-buddha-area { position: relative; width: 240px; height: 220px; display: flex; align-items: center; justify-content: center; margin-bottom: -15px; z-index: 5; }
-    .buddha-halo {
-      position: absolute; width: 230px; height: 230px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 234, 167, 0.8) 0%, rgba(241, 196, 15, 0.4) 45%, rgba(230, 126, 34, 0.15) 70%, transparent 80%);
-      animation: rotateHalo 30s linear infinite; pointer-events: none;
-    }
-    .buddha-statue-wrapper { position: relative; z-index: 6; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.8)); }
-    .buddha-svg-box { width: 180px; height: 220px; }
-
-    /* Bàn Thờ */
-    .altar-table-section { position: relative; width: 100%; max-width: 780px; display: flex; flex-direction: column; align-items: center; z-index: 10; }
-    .altar-table {
-      position: relative; width: 100%; height: 105px;
-      background: linear-gradient(to bottom, #5c1810, #3d0c07 35%, #240502);
-      border: 3px solid #b7791f; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.9);
-      display: flex; align-items: center; justify-content: space-around; padding: 0 20px;
-    }
-    .candle-flame { width: 12px; height: 18px; background: radial-gradient(ellipse at bottom, #fff, #fffa65 40%, #ff9f1a 70%, transparent); border-radius: 50% 50% 35% 35%; box-shadow: 0 0 16px #ff9f1a; animation: flicker 1.8s infinite alternate; }
-    .sacred-instrument { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; }
-    .sacred-instrument:hover { transform: scale(1.15); }
-    .bell-dome { font-size: 34px; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.6)); }
-    .woodblock-shape { font-size: 30px; }
-    .inst-label { font-size: 9px; color: var(--color-gold); font-weight: 500; margin-top: 2px; }
-
-    .censer-box { position: relative; display: flex; flex-direction: column; align-items: center; margin-top: -30px; cursor: pointer; }
-    .censer-smoke-origin { position: absolute; top: -20px; width: 6px; height: 6px; }
-    .incense-bundle { display: flex; gap: 6px; align-items: flex-end; height: 42px; margin-bottom: -5px; }
-    .incense-stick { width: 3px; height: 38px; background: #c0392b; position: relative; border-radius: 2px; }
-    .ember { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; background: #ff5252; border-radius: 50%; box-shadow: 0 0 10px #ff1744; animation: emberGlow 1.2s infinite alternate; }
-    .bronze-censer { width: 75px; height: 36px; background: radial-gradient(circle at 50% 30%, #ffd700, #b7791f 60%, #684912); border-radius: 0 0 24px 24px; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 15px rgba(0,0,0,0.7); font-size: 8px; font-weight: bold; color: #3e2723; }
-
-    .offering-tray { display: flex; flex-direction: column; align-items: center; font-size: 18px; }
-    .divination-box { position: absolute; right: 15px; bottom: -45px; cursor: pointer; text-align: center; font-size: 10px; font-weight: bold; color: var(--color-gold); background: #4a2818; border: 2px solid #b7791f; border-radius: 4px; padding: 4px 8px; }
-
-    /* Bồ Đoàn 48 Chỗ */
-    .congregation-hall { position: relative; width: 100%; max-width: 900px; min-height: 380px; margin-top: 30px; display: flex; justify-content: center; transform: rotateX(20deg); transform-style: preserve-3d; }
-    .sacred-carpet { position: absolute; top: 0; width: 80px; height: 100%; background: linear-gradient(to bottom, #741b14, #3e0e0a); border-left: 3px solid #b7791f; border-right: 3px solid #b7791f; display: flex; flex-direction: column; align-items: center; justify-content: space-around; z-index: 1; font-size: 20px; opacity: 0.35; }
-    .cushions-grid { position: relative; width: 100%; display: grid; grid-template-columns: repeat(8, 1fr); gap: 18px 12px; z-index: 3; padding: 10px; }
-    .cushion-slot { position: relative; height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
-    .cushion-pad { width: 40px; height: 20px; background: radial-gradient(ellipse, #9c4f24 0%, #3b1908 100%); border-radius: 50%; border: 2px solid #b7791f; box-shadow: 0 6px 12px rgba(0,0,0,0.7); }
-    .cushion-slot.occupied .cushion-pad { background: radial-gradient(ellipse, #b7791f 0%, #3b1908 100%); }
-    .cushion-slot.vip .cushion-pad { border-color: #ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.8); }
-    .pilgrim-avatar { width: 34px; height: 34px; border-radius: 50%; background: #34495e; border: 2px solid var(--color-gold); display: flex; align-items: center; justify-content: center; margin-bottom: -6px; z-index: 2; font-size: 18px; }
-    .pilgrim-name { font-size: 9px; color: #fff; background: rgba(0,0,0,0.75); border: 1px solid rgba(255, 215, 0, 0.3); padding: 1px 4px; border-radius: 4px; white-space: nowrap; max-width: 70px; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; z-index: 2; }
-    .chat-speech-bubble { position: absolute; top: -38px; left: 50%; transform: translateX(-50%); background: #fff; color: #2c3e50; font-size: 10px; font-weight: 500; padding: 4px 8px; border-radius: 8px; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 30; }
-
-    /* Walker */
-    .ceremony-walker { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; z-index: 25; opacity: 0; pointer-events: none; }
-    .ceremony-walker.active { animation: walkToAltar 4.5s ease-in-out forwards; }
-    .walker-bubble { background: rgba(0,0,0,0.85); border: 1px solid var(--color-gold); color: #ffd700; font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 12px; margin-bottom: 6px; }
-    .walker-avatar { font-size: 34px; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8)); }
-    .walker-name { font-size: 10px; color: #fff; background: #6b0c0c; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--color-gold); }
+    .chat-prayer-bar { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 650px; }
+    .quick-prayer-chips { display: flex; gap: 6px; justify-content: center; }
+    .chip { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,0,0.3); border-radius: 12px; padding: 3px 10px; font-size: 10px; color: #fad390; cursor: pointer; }
+    .chat-input-wrapper { display: flex; gap: 8px; width: 100%; }
+    .chat-input-wrapper input { flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,215,0,0.35); border-radius: 20px; padding: 8px 16px; color: #fff; font-size: 12px; outline: none; }
+    .send-prayer-btn { background: linear-gradient(135deg, #b7791f, #8c531b); border: none; border-radius: 20px; padding: 8px 18px; color: #fff; font-weight: 700; font-size: 12px; cursor: pointer; }
 
     /* Modal */
-    .fortune-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+    .fortune-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.78); display: flex; align-items: center; justify-content: center; z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
     .fortune-modal.open { opacity: 1; pointer-events: auto; }
-    .modal-card { width: 90%; max-width: 420px; background: #f5ebd7; border: 4px solid #8c531b; border-radius: 14px; padding: 22px; color: #3e2723; }
-    .card-fortune-title { font-size: 20px; font-family: var(--font-serif); color: #5c1810; font-weight: 700; text-align: center; margin: 4px 0 10px 0; }
-    .poem-block { background: rgba(183, 121, 31, 0.1); border-left: 3px solid #b71540; padding: 8px 12px; font-style: italic; font-family: var(--font-serif); font-size: 13px; line-height: 1.5; margin-bottom: 10px; }
+    .modal-card { width: 90%; max-width: 440px; background: linear-gradient(145deg, #f5ebd7, #e8d7b7); border: 4px solid #8c531b; border-radius: 14px; padding: 24px; color: #3e2723; }
+    .card-fortune-title { font-size: 20px; font-family: var(--font-serif); color: #5c1810; font-weight: 700; text-align: center; margin: 4px 0 10px; }
+    .poem-block { background: rgba(183,121,31,0.08); border-left: 3px solid #b71540; padding: 8px 12px; font-family: var(--font-serif); font-style: italic; font-size: 12.5px; margin-bottom: 10px; line-height: 1.5; }
 
-    /* Control Dock */
-    .interaction-control-dock { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(18, 9, 6, 0.95); border-top: 2px solid var(--color-gold-deep); z-index: 35; padding: 10px 20px; }
-    .btn-group { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-    .action-btn { display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #3d1a0e, #291108); border: 1px solid var(--color-gold-deep); border-radius: 6px; padding: 6px 12px; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-    .action-btn:hover { background: #5c2916; border-color: #ffd700; transform: translateY(-2px); }
-
-    @keyframes rotateHalo { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    @keyframes flicker { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08, 0.92); } }
-    @keyframes emberGlow { 0% { opacity: 0.7; } 100% { opacity: 1; transform: translateX(-50%) scale(1.3); } }
-    @keyframes walkToAltar {
-      0% { opacity: 0; bottom: 20px; } 20% { opacity: 1; bottom: 70px; }
-      45%, 75% { bottom: 160px; } 90% { opacity: 1; bottom: 70px; } 100% { opacity: 0; bottom: 20px; }
+    @keyframes popPrayer {
+      0% { opacity: 0; transform: translate(-50%, -100%) scale(0.8); }
+      12%, 85% { opacity: 1; transform: translate(-50%, -125%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -140%) scale(0.9); }
     }
   </style>
 </head>
 <body>
-  <div class="pagoda-container">
-    <canvas id="smokeCanvas" class="effect-canvas"></canvas>
+  <div id="webgl-container"></div>
 
-    <!-- HUD TIKTOK GUIDE -->
+  <div class="overlay-container">
+    <header class="top-nav-bar">
+      <div class="user-badge">
+        <div class="user-avatar-circle">🧘‍♂️</div>
+        <div>
+          <div><span class="user-dharma-name">Phật tử Diệu Tâm</span><span class="user-level-tag">Bậc 1 • Hạt Sen</span></div>
+          <div class="temple-tag">🪷 Vạn Phúc Tự • 128 đang viếng chùa</div>
+        </div>
+      </div>
+      <div>
+        <button class="top-btn" id="btnCameraAngle">🎥 Đổi Góc Nhìn</button>
+      </div>
+    </header>
+
     <aside class="live-hud-panel">
       <div class="hud-header">
-        <span class="hud-icon">🪷</span>
+        <span style="font-size:22px">🪷</span>
         <div>
-          <span class="hud-subtitle">LONGNH.COM • VẠN PHÚC TỰ</span>
+          <div class="hud-subtitle">CHÙA ONLINE 3D • LONGNH.COM</div>
           <h2 class="hud-title">HƯỚNG DẪN DÂNG LỄ TÂM LINH</h2>
         </div>
       </div>
       <div class="hud-grid">
         <div class="hud-item"><span class="gift-badge">🌹 1 Xu (Rose/Nến)</span><span class="action-desc">Thắp 1 nén nhang trầm + chuông</span></div>
         <div class="hud-item"><span class="gift-badge">🌸 5 Xu (Hoa Sen)</span><span class="action-desc">Dâng đóa hoa sen hồng thanh tịnh</span></div>
-        <div class="hud-item"><span class="gift-badge">🙏 10 Xu (Trái tim)</span><span class="action-desc">Lạy Phật Tam Bái + 3 tiếng mõ</span></div>
-        <div class="hud-item"><span class="gift-badge">🍎 30 Xu (Mâm quả)</span><span class="action-desc">Dâng mâm ngũ quả cúng dường</span></div>
-        <div class="hud-item hud-highlight"><span class="gift-badge">🪷 100+ Xu (Đại Lễ)</span><span class="action-desc">Mưa hoa sen, AI xướng Sớ Cầu An</span></div>
+        <div class="hud-item"><span class="gift-badge">🙏 10 Xu (Trái tim)</span><span class="action-desc">Phật tử tiến lên <strong>Lạy Tam Bái 3D</strong></span></div>
+        <div class="hud-item"><span class="gift-badge">🍎 30 Xu (Mâm quả)</span><span class="action-desc">Dâng mâm ngũ quả & Ghi Sổ Vàng</span></div>
+        <div class="hud-item hud-highlight"><span class="gift-badge">🪷 100+ Xu (Đại Lễ)</span><span class="action-desc">Mưa hoa sen, hào quang, đọc sớ</span></div>
       </div>
       <div class="hud-footer">
         <span>💬 Gõ <strong>"A Di Đà Phật"</strong>: Niệm Phật hiển thị lời khấn</span>
@@ -175,109 +121,52 @@
       </div>
     </aside>
 
-    <!-- IP Badge -->
-    <div class="visitor-ip-badge">
-      <span>🧘‍♂️</span>
-      <div>
-        <div class="ip-label">Bạn đang viếng chùa với danh xưng:</div>
-        <div class="ip-name" id="myDisplayName">Phật tử Thiện Duyên (Web Visitor)</div>
-      </div>
-    </div>
+    <div id="speech-bubbles-layer" class="bubbles-layer"></div>
 
-    <!-- CHÁNH ĐIỆN -->
-    <main class="main-sanctuary">
-      <header class="sanctuary-roof">
-        <div class="horizontal-board">
-          <span class="board-sub">TỪ BI HỶ XẢ</span>
-          <h1 class="board-main">VẠN PHÚC TỰ</h1>
-          <span class="board-tag">PHẬT QUANG PHỔ CHIẾU</span>
-        </div>
-      </header>
-
-      <section class="altar-buddha-area">
-        <div class="buddha-halo"></div>
-        <div class="buddha-statue-wrapper">
-          <div class="buddha-svg-box">
-            <!-- Tượng Phật SVG -->
-            <svg viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <ellipse cx="100" cy="32" rx="14" ry="12" fill="#ffd700" stroke="#b7791f"/>
-              <path d="M78 45 C78 28, 122 28, 122 45 C122 75, 100 88, 100 88 C100 88, 78 75, 78 45 Z" fill="#ffeaa7" stroke="#cfa635"/>
-              <circle cx="100" cy="46" r="2.5" fill="#e74c3c"/>
-              <path d="M86 52 Q92 56 96 52" stroke="#5d4037" stroke-width="2" fill="none"/>
-              <path d="M104 52 Q108 56 114 52" stroke="#5d4037" stroke-width="2" fill="none"/>
-              <path d="M94 72 Q100 76 106 72" stroke="#b71540" stroke-width="2" fill="none"/>
-              <path d="M60 100 C50 140, 45 175, 45 185 L155 185 C155 175, 150 140, 140 100 Z" fill="#f39c12" stroke="#d35400" stroke-width="2"/>
-              <ellipse cx="100" cy="165" rx="20" ry="9" fill="#ffeaa7"/>
-              <g>
-                <path d="M15 205 Q55 180 85 205 Q100 180 115 205 Q145 180 185 205 L175 225 L25 225 Z" fill="#fd79a8" stroke="#d63031" stroke-width="2"/>
-                <rect x="20" y="222" width="160" height="15" rx="5" fill="#f1c40f" stroke="#b7791f" stroke-width="2"/>
-              </g>
-            </svg>
-          </div>
-        </div>
-      </section>
-
-      <!-- BÀN THỜ TAM BẢO -->
-      <section class="altar-table-section">
-        <div class="altar-table">
-          <div class="altar-candle"><div class="candle-flame"></div><span>🪷</span></div>
-          <div class="sacred-instrument" id="templeBell" title="Thỉnh Chuông"><div class="bell-dome">🔔</div><span class="inst-label">Đại Hồng Chung</span></div>
-          <div class="censer-box" id="mainCenser" title="Thắp Nén Nhang">
-            <div class="censer-smoke-origin" id="smokeOrigin"></div>
-            <div class="incense-bundle">
-              <div class="incense-stick"><span class="ember"></span></div>
-              <div class="incense-stick" style="height:44px"><span class="ember"></span></div>
-              <div class="incense-stick"><span class="ember"></span></div>
-            </div>
-            <div class="bronze-censer">TAM BẢO</div>
-          </div>
-          <div class="offering-tray"><div>🍎🍇🍊</div><span style="font-size:9px;color:#fbc531">Mâm Ngũ Quả</span></div>
-          <div class="sacred-instrument" id="templeWoodblock" title="Gõ Mõ"><div class="woodblock-shape">🪵</div><span class="inst-label">Mõ Gia Trì</span></div>
-          <div class="altar-candle"><div class="candle-flame"></div><span>🪷</span></div>
-        </div>
-        <div class="divination-box" id="divinationTube">🎋 ỐNG XĂM QUAN ÂM</div>
-      </section>
-
-      <!-- BỒ ĐOÀN -->
-      <section class="congregation-hall">
-        <div class="sacred-carpet"><span>🪷</span><span>🪷</span><span>🪷</span></div>
-        <div class="cushions-grid" id="cushionsGrid"></div>
-        <div class="ceremony-walker" id="ceremonyWalker">
-          <div class="walker-bubble" id="walkerBubble"></div>
-          <div class="walker-avatar">🧘‍♂️</div>
-          <div class="walker-name" id="walkerName">Phật tử dâng lễ</div>
-        </div>
-      </section>
-    </main>
-
-    <!-- MODAL QUẺ XĂM -->
     <div class="fortune-modal" id="fortuneModal">
       <div class="modal-card">
         <div style="text-align:right"><button id="closeFortuneBtn" style="background:none;border:none;font-size:18px;cursor:pointer">✕</button></div>
-        <div style="text-align:center;font-size:11px;font-weight:bold;color:#8c531b">LỜI PHẬT BÀ QUAN ÂM BAN PHƯỚC</div>
-        <h2 class="card-fortune-title" id="fortuneTitle">QUẺ SỐ 01: THƯỢNG THƯỢNG CÁT</h2>
-        <div class="poem-block" id="fortunePoem">Đầu xuân mưa thuận gió êm đềm,<br>Trời ban phúc lộc đến thềm nhà xưa.</div>
-        <div style="font-size:12px;margin-bottom:8px"><strong>📖 Luận Giải:</strong> <span id="fortuneMeaning">Cầu tài đại cát, gia đạo an khang. Mọi mong ước nay sắp thành hiện thực.</span></div>
-        <div style="font-size:12px"><strong>🪷 Lời Khuyên:</strong> <span id="fortuneAdvice">Giữ tâm khiêm tốn, giúp đỡ người nghèo khó để phước báu được lâu dài.</span></div>
+        <div style="text-align:center;font-size:10px;font-weight:bold;color:#8c531b">LỜI PHẬT BÀ QUAN ÂM BAN PHƯỚC</div>
+        <h2 class="card-fortune-title">QUẺ SỐ 01: THƯỢNG THƯỢNG CÁT</h2>
+        <div class="poem-block">Đầu xuân mưa thuận gió êm đềm,<br>Trời ban phúc lộc đến thềm nhà xưa.</div>
+        <div style="font-size:12px;margin-bottom:6px"><strong>📖 Luận Giải:</strong> Cầu tài đại cát, gia đạo an khang. Mọi mong ước nay sắp thành hiện thực.</div>
+        <div style="font-size:12px"><strong>🪷 Lời Khuyên:</strong> Giữ tâm khiêm tốn, giúp đỡ người nghèo khó để phước báu được lâu dài.</div>
       </div>
     </div>
 
-    <!-- DOCK TƯƠNG TÁC -->
-    <footer class="interaction-control-dock">
-      <div class="btn-group">
-        <button class="action-btn" id="btnIncense">🪔 Thắp Nén Nhang</button>
-        <button class="action-btn" id="btnBow">🙏 Lạy Tam Bái</button>
-        <button class="action-btn" id="btnLotus">🌸 Dâng Đóa Sen</button>
-        <button class="action-btn" id="btnFruit">🍎 Dâng Mâm Quả</button>
-        <button class="action-btn" id="btnBell">🔔 Thỉnh Chuông</button>
-        <button class="action-btn" id="btnWoodblock">🪵 Gõ Mõ Niệm Phật</button>
-        <button class="action-btn" id="btnDivination">🎋 Rút Quẻ Xăm</button>
+    <footer class="bottom-action-bar">
+      <div class="action-pills-row">
+        <button class="pill-btn" id="btnActionBow"><span class="pill-icon">🧘‍♂️</span><span>Lạy Phật</span></button>
+        <button class="pill-btn" id="btnActionChant"><span class="pill-icon">📜</span><span>Tụng Kinh</span></button>
+        <button class="pill-btn pill-btn-primary" id="btnActionOffer"><span class="pill-icon">🪷</span><span>Dâng Lễ</span></button>
+        <button class="pill-btn" id="btnActionFortune"><span class="pill-icon">🎋</span><span>Rút Quẻ</span></button>
+      </div>
+
+      <div class="chat-prayer-bar">
+        <div class="quick-prayer-chips">
+          <span class="chip" data-text="Nam Mô A Di Đà Phật 🙏">A Di Đà Phật</span>
+          <span class="chip" data-text="Cầu gia đạo bình an, vạn sự cát tường 🌸">Cầu Bình An</span>
+          <span class="chip" data-text="Cầu cho con thi đỗ, vượt qua hết môn 📚">Cầu Đỗ Đạt</span>
+          <span class="chip" data-text="Xin que 🎋">Xin Quẻ</span>
+        </div>
+        <div class="chat-input-wrapper">
+          <input type="text" id="prayerInput" placeholder="Nhập lời khấn nguyện của bạn...">
+          <button class="send-prayer-btn" id="btnSendPrayer">Gửi Lời Khấn 🙏</button>
+        </div>
       </div>
     </footer>
   </div>
 
   <script>
-    // WEB AUDIO SYNTHESIZER NỘI BỘ (KHÔNG CẦN FILE MP3 NGOÀI)
+    // THREE.JS 3D ENGINE & CLIENT LOGIC
+    let scene, camera, renderer, haloGroup;
+    let cameraMode = 0;
+    const charactersList = [];
+    const petalsList = [];
+    const smokeParticles = [];
+    const speechBubbles = [];
+
+    // Âm thanh
     let audioCtx = null;
     function getAudioCtx() {
       if (!audioCtx) {
@@ -287,31 +176,27 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
       return audioCtx;
     }
-
     function playBell() {
       const ctx = getAudioCtx();
       const now = ctx.currentTime;
       [130.8, 261.6, 523.2, 784.8].forEach((f, idx) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(f, now);
+        osc.type = 'sine'; osc.frequency.setValueAtTime(f, now);
         gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime([0.5, 0.4, 0.25, 0.15][idx], now + 0.02);
+        gain.gain.linearRampToValueAtTime([0.6, 0.45, 0.3, 0.15][idx], now + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 5.0);
         osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(now); osc.stop(now + 5.1);
+        osc.start(now); osc.stop(now + 5.2);
       });
     }
-
     function playWoodblock() {
       const ctx = getAudioCtx();
       const now = ctx.currentTime;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       const filter = ctx.createBiquadFilter();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(580, now);
+      osc.type = 'triangle'; osc.frequency.setValueAtTime(580, now);
       osc.frequency.exponentialRampToValueAtTime(260, now + 0.12);
       filter.type = 'bandpass'; filter.frequency.setValueAtTime(580, now); filter.Q.setValueAtTime(4.5, now);
       gain.gain.setValueAtTime(0.001, now);
@@ -321,81 +206,257 @@
       osc.start(now); osc.stop(now + 0.15);
     }
 
-    // CANVAS KHÓI
-    const canvas = document.getElementById('smokeCanvas');
-    const ctx = canvas.getContext('2d');
-    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-    window.addEventListener('resize', resize); resize();
-    const particles = [];
-    function renderSmoke() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const origin = document.getElementById('smokeOrigin');
-      if (origin) {
-        const rect = origin.getBoundingClientRect();
-        if (particles.length < 80) {
-          particles.push({
-            x: rect.left + rect.width / 2 + (Math.random() - 0.5) * 8,
-            y: rect.top, radius: 4 + Math.random() * 5, alpha: 0.6,
-            speedY: 0.8 + Math.random() * 0.8, angle: Math.random() * 6.28
+    function init() {
+      const container = document.getElementById('webgl-container');
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x120805);
+      scene.fog = new THREE.FogExp2(0x1a0a06, 0.022);
+
+      camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 0.1, 150);
+      setCamPos(0);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      container.appendChild(renderer.domElement);
+
+      // Đèn
+      scene.add(new THREE.AmbientLight(0x4a2a18, 1.3));
+      const dirLight = new THREE.DirectionalLight(0xfffae0, 1.8);
+      dirLight.position.set(5, 12, 4);
+      scene.add(dirLight);
+
+      const altarLight = new THREE.PointLight(0xffd700, 2.5, 18);
+      altarLight.position.set(0, 4.5, -6.5);
+      scene.add(altarLight);
+
+      // Sàn Gỗ & Thảm Đỏ
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(28, 36), new THREE.MeshStandardMaterial({ color: 0x3d2015, roughness: 0.4 }));
+      floor.rotation.x = -Math.PI / 2;
+      scene.add(floor);
+
+      const carpet = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 26), new THREE.MeshStandardMaterial({ color: 0x8b1515, roughness: 0.8 }));
+      carpet.rotation.x = -Math.PI / 2;
+      carpet.position.set(0, 0.015, 2);
+      scene.add(carpet);
+
+      // Cột chùa
+      [-5.5, 5.5].forEach(px => {
+        [-3.5, 6].forEach(pz => {
+          const col = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.48, 14, 20), new THREE.MeshStandardMaterial({ color: 0x3b140a, roughness: 0.4 }));
+          col.position.set(px, 7, pz);
+          scene.add(col);
+        });
+      });
+
+      // Tượng Phật dát vàng & Tòa sen
+      const altar = new THREE.Group();
+      const base = new THREE.Mesh(new THREE.BoxGeometry(8, 0.8, 4.5), new THREE.MeshStandardMaterial({ color: 0x3d1a0e }));
+      base.position.set(0, 0.4, -7.5);
+      altar.add(base);
+
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.2 });
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.1, 1.6, 20), goldMat);
+      torso.position.set(0, 2.7, -8);
+      altar.add(torso);
+
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 20), goldMat);
+      head.position.set(0, 3.8, -8);
+      altar.add(head);
+
+      const legs = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.35, 12, 24), goldMat);
+      legs.position.set(0, 1.95, -8);
+      legs.rotation.x = Math.PI / 2;
+      altar.add(legs);
+
+      // Hào quang xoay
+      haloGroup = new THREE.Group();
+      haloGroup.add(new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.06, 16, 48), new THREE.MeshBasicMaterial({ color: 0xffd700 })));
+      haloGroup.position.set(0, 3.8, -8.4);
+      altar.add(haloGroup);
+
+      // Lư hương đồng
+      const censer = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.45, 0.65, 20), new THREE.MeshStandardMaterial({ color: 0xcfa635, metalness: 0.85, roughness: 0.3 }));
+      censer.position.set(0, 1.45, -5.6);
+      altar.add(censer);
+      scene.add(altar);
+
+      // Nhân vật Chibi 3D
+      const names = ['Thích Thì Chiều', 'Thích nhiều thứ', 'Thích Phước Tâm', 'An Lạc', 'Tuệ An', 'Lan\'slan', 'Đức Tâm', 'Từ Như', 'Hìn', 'An Nhân'];
+      let nIdx = 0;
+      for (let r = 0; r < 6; r++) {
+        const z = 0.5 + r * 1.7;
+        for (let c = 0; c < 3; c++) {
+          [-1.8 - c * 1.35, 1.8 + c * 1.35].forEach(x => {
+            const pGroup = new THREE.Group();
+            const mat = new THREE.Mesh(new THREE.BoxGeometry(1, 0.04, 1), new THREE.MeshStandardMaterial({ color: 0x5a1810 }));
+            pGroup.add(mat);
+
+            const zafu = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.42, 0.16, 16), new THREE.MeshStandardMaterial({ color: 0x7c4320 }));
+            zafu.position.y = 0.12;
+            pGroup.add(zafu);
+
+            const pivot = new THREE.Group();
+            pivot.position.y = 0.2;
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.38, 0.7, 16), new THREE.MeshStandardMaterial({ color: 0x546e7a }));
+            body.position.y = 0.35;
+            pivot.add(body);
+
+            const cHead = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), new THREE.MeshStandardMaterial({ color: 0xffe0bd }));
+            cHead.position.y = 0.88;
+            pivot.add(cHead);
+
+            pGroup.add(pivot);
+            pGroup.position.set(x, 0, z);
+            scene.add(pGroup);
+
+            charactersList.push({
+              group: pGroup, pivot, name: names[nIdx % names.length],
+              level: `Cấp ${Math.floor(Math.random() * 4) + 1}`,
+              isCenterHero: (r === 5 && x > 0 && x < 2),
+              idleOffset: Math.random() * 6.28, isBowing: false, bowProgress: 0, bowRepeat: 0,
+              screenX: 0, screenY: 0
+            });
+            nIdx++;
           });
         }
       }
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.y -= p.speedY; p.x += Math.sin(p.angle) * 0.6; p.angle += 0.03; p.radius += 0.08; p.alpha -= 0.004;
-        if (p.alpha <= 0 || p.y < 0) { particles.splice(i, 1); continue; }
-        ctx.beginPath();
-        const grad = ctx.createRadialGradient(p.x, p.y, p.radius * 0.1, p.x, p.y, p.radius);
-        grad.addColorStop(0, `rgba(255, 235, 180, ${p.alpha * 0.7})`);
-        grad.addColorStop(1, 'rgba(180, 160, 130, 0)');
-        ctx.fillStyle = grad; ctx.arc(p.x, p.y, p.radius, 0, 6.28); ctx.fill();
+
+      // Mưa cánh sen
+      const pGeo = new THREE.ConeGeometry(0.08, 0.2, 5);
+      pGeo.rotateX(Math.PI / 2);
+      const pMat = new THREE.MeshStandardMaterial({ color: 0xfd79a8, roughness: 0.35 });
+      for (let i = 0; i < 70; i++) {
+        const pet = new THREE.Mesh(pGeo, pMat);
+        pet.position.set((Math.random() - 0.5) * 18, Math.random() * 12, (Math.random() - 0.5) * 18 + 2);
+        pet.userData = { speedY: 0.015 + Math.random() * 0.02, rotY: (Math.random() - 0.5) * 0.03 };
+        scene.add(pet);
+        petalsList.push(pet);
       }
-      requestAnimationFrame(renderSmoke);
-    }
-    renderSmoke();
 
-    // RENDER BỒ ĐOÀN
-    const grid = document.getElementById('cushionsGrid');
-    const sampleNames = ['Phật tử Diệu Tâm', 'Phật tử Thiện Nhân', 'Phật tử Minh Tuệ', 'Phật tử Phúc Hưng', 'Phật tử Tâm An', 'Phật tử Từ Bi'];
-    for (let i = 0; i < 48; i++) {
-      const slot = document.createElement('div');
-      slot.className = 'cushion-slot';
-      if (i < 6) {
-        slot.classList.add('occupied', i < 2 ? 'vip' : 'norm');
-        slot.innerHTML = `
-          <div class="pilgrim-avatar">🧘‍♂️</div>
-          <div class="pilgrim-name">${sampleNames[i]}</div>
-          <div class="cushion-pad"></div>
-        `;
-      } else {
-        slot.innerHTML = `<div class="cushion-pad"></div>`;
-      }
-      grid.appendChild(slot);
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
     }
 
-    function triggerWalk(actionText) {
-      const walker = document.getElementById('ceremonyWalker');
-      document.getElementById('walkerBubble').textContent = actionText;
-      walker.classList.remove('active');
-      void walker.offsetWidth;
-      walker.classList.add('active');
+    function setCamPos(mode) {
+      if (mode === 0) camera.position.set(0, 3.4, 11.5);
+      else camera.position.set(0, 5.8, 13.0);
+      camera.lookAt(0, 3.0, -8.0);
     }
 
-    // GẮN NÚT
-    document.getElementById('btnIncense').onclick = () => { playBell(); triggerWalk('Thành tâm dâng nén hương trầm 🙏'); };
-    document.getElementById('btnBow').onclick = () => { playWoodblock(); setTimeout(playWoodblock, 300); setTimeout(playWoodblock, 600); triggerWalk('Chí tâm đảnh lễ Tam Bái 🙏'); };
-    document.getElementById('btnLotus').onclick = () => { playBell(); triggerWalk('Dâng đóa sen thanh khiết 🌸'); };
-    document.getElementById('btnFruit').onclick = () => { playBell(); triggerWalk('Dâng mâm quả cúng dường 🍎'); };
-    document.getElementById('btnBell').onclick = playBell;
-    document.getElementById('templeBell').onclick = playBell;
-    document.getElementById('btnWoodblock').onclick = playWoodblock;
-    document.getElementById('templeWoodblock').onclick = playWoodblock;
-    document.getElementById('mainCenser').onclick = () => { playBell(); triggerWalk('Thắp nén tâm hương 🙏'); };
+    // Hoạt ảnh lạy Phật
+    function bowAll(repeats = 3) {
+      charactersList.forEach(c => {
+        c.isBowing = true; c.bowProgress = 0; c.bowRepeat = repeats;
+      });
+      for (let i = 0; i < repeats; i++) setTimeout(playWoodblock, i * 1100);
+    }
+
+    const tVec = new THREE.Vector3();
+    const sLayer = document.getElementById('speech-bubbles-layer');
+
+    function updateOverlay() {
+      sLayer.innerHTML = '';
+      charactersList.forEach(c => {
+        tVec.set(c.group.position.x, c.group.position.y + 1.25, c.group.position.z);
+        tVec.project(camera);
+        if (tVec.z > 1.0) return;
+        const sx = (tVec.x * 0.5 + 0.5) * window.innerWidth;
+        const sy = (-tVec.y * 0.5 + 0.5) * window.innerHeight;
+        c.screenX = sx; c.screenY = sy;
+
+        const tag = document.createElement('div');
+        tag.className = 'char-3d-nametag';
+        tag.style.left = `${sx}px`; tag.style.top = `${sy}px`;
+        tag.innerHTML = `${c.isCenterHero ? '<span class="char-crown-badge">👑</span>' : ''}<span class="nametag-dharma">${c.name}</span><span class="nametag-level">${c.level}</span>`;
+        sLayer.appendChild(tag);
+      });
+
+      speechBubbles.forEach(b => {
+        const bubble = document.createElement('div');
+        bubble.className = 'prayer-speech-bubble';
+        bubble.style.left = `${b.x}px`; bubble.style.top = `${b.y}px`;
+        bubble.textContent = b.text;
+        sLayer.appendChild(bubble);
+      });
+    }
+
+    function addBubble(text) {
+      const c = charactersList[Math.floor(Math.random() * charactersList.length)];
+      if (!c) return;
+      const bObj = { x: c.screenX, y: c.screenY - 18, text };
+      speechBubbles.push(bObj);
+      setTimeout(() => {
+        const idx = speechBubbles.indexOf(bObj);
+        if (idx !== -1) speechBubbles.splice(idx, 1);
+      }, 4500);
+    }
+
+    let clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      const time = clock.getElapsedTime();
+
+      if (haloGroup) haloGroup.rotation.z = time * 0.25;
+
+      charactersList.forEach(c => {
+        if (c.isBowing) {
+          c.bowProgress += delta * 1.8;
+          c.pivot.rotation.x = Math.sin(c.bowProgress * Math.PI) * 1.2;
+          if (c.bowProgress >= 1.0) {
+            c.bowProgress = 0; c.bowRepeat--;
+            if (c.bowRepeat <= 0) { c.isBowing = false; c.pivot.rotation.x = 0; }
+          }
+        } else {
+          c.pivot.position.y = 0.2 + Math.sin(time * 2.2 + c.idleOffset) * 0.025;
+        }
+      });
+
+      petalsList.forEach(p => {
+        p.position.y -= p.userData.speedY;
+        p.rotation.y += p.userData.rotY;
+        if (p.position.y < 0.05) p.position.y = 12;
+      });
+
+      updateOverlay();
+      renderer.render(scene, camera);
+    }
+
+    // UI Events
+    document.getElementById('btnActionBow').onclick = () => { bowAll(3); addBubble('Ngũ thể đầu địa, chí tâm đảnh lễ Tam Bảo 🙏'); };
+    document.getElementById('btnActionChant').onclick = () => { playBell(); for (let i = 0; i < 4; i++) setTimeout(playWoodblock, 300 + i * 250); addBubble('Nam Mô A Di Đà Phật 🙏'); };
+    document.getElementById('btnActionOffer').onclick = () => { playBell(); bowAll(1); addBubble('Thành tâm dâng nén hương trầm cúng dường 🪔'); };
+    document.getElementById('btnCameraAngle').onclick = () => { cameraMode = 1 - cameraMode; setCamPos(cameraMode); };
 
     const modal = document.getElementById('fortuneModal');
-    document.getElementById('btnDivination').onclick = () => modal.classList.add('open');
-    document.getElementById('divinationTube').onclick = () => modal.classList.add('open');
+    document.getElementById('btnActionFortune').onclick = () => modal.classList.add('open');
     document.getElementById('closeFortuneBtn').onclick = () => modal.classList.remove('open');
+
+    function sendPrayer() {
+      const input = document.getElementById('prayerInput');
+      const val = input.value.trim();
+      if (!val) return;
+      addBubble(val); playWoodblock(); input.value = '';
+    }
+    document.getElementById('btnSendPrayer').onclick = sendPrayer;
+    document.getElementById('prayerInput').onkeydown = e => { if (e.key === 'Enter') sendPrayer(); };
+
+    document.querySelectorAll('.chip').forEach(ch => {
+      ch.onclick = () => { document.getElementById('prayerInput').value = ch.getAttribute('data-text'); sendPrayer(); };
+    });
+
+    setInterval(() => {
+      const prayers = ['cầu cho con trúng 2 tỷ vé số', 'cho con vượt qua hết môn', 'Đạt học bổng', 'ielts đạt aim, A di đà phật....', 'Nam mô a di đà phật 🙏'];
+      addBubble(prayers[Math.floor(Math.random() * prayers.length)]);
+    }, 5500);
+
+    init();
+    animate();
   </script>
 </body>
 </html>

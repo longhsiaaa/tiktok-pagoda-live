@@ -1,22 +1,18 @@
 /* ========================================================
-   LỄ CHÙA DÂNG HƯƠNG ONLINE - VẠN PHÚC TỰ
+   LỄ CHÙA DÂNG HƯƠNG ONLINE 3D - VẠN PHÚC TỰ
    Tác giả: LongNH (longnh.com)
-   CSS Giao Diện Không Gian Chánh Điện, Bồ Đoàn & Tương Tác
+   CSS 3D WebGL Canvas & Giao Diện Tâm Linh Hoàn Mỹ
    ======================================================== */
 
 :root {
   --color-gold: #ffd700;
   --color-gold-deep: #cfa635;
   --color-gold-glow: rgba(255, 215, 0, 0.45);
-  --color-vermilion: #8b0000;
-  --color-vermilion-bright: #b71540;
-  --color-wood-dark: #1a0f0a;
-  --color-wood-mid: #2d1810;
-  --color-wood-light: #4a2818;
-  --color-monastic-brown: #5c3a21;
+  --color-vermilion: #8b1111;
+  --color-dark-lacquer: rgba(22, 10, 6, 0.92);
+  --color-wood-floor: #24140e;
   --color-lotus-pink: #fd79a8;
-  --color-lotus-deep: #e84393;
-  --color-incense-glow: #ff7675;
+  --color-bubble-bg: rgba(20, 10, 6, 0.9);
   --font-serif: 'Playfair Display', Georgia, serif;
   --font-display: 'Cinzel', serif;
   --font-sans: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -28,31 +24,250 @@
   box-sizing: border-box;
 }
 
-body.pagoda-body {
+body.pagoda-body-3d {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background-color: var(--color-wood-dark);
-  background-image: 
-    radial-gradient(circle at 50% 30%, rgba(74, 40, 24, 0.85) 0%, rgba(26, 15, 10, 0.98) 75%),
-    linear-gradient(to bottom, #110805, #1e0e08 60%, #150a06);
+  background-color: #0d0604;
   font-family: var(--font-sans);
   color: #f5f6fa;
   user-select: none;
 }
 
-/* Khung Chứa Toàn Bộ Không Gian Chùa */
-.pagoda-container {
-  position: relative;
+/* Three.js 3D Viewport */
+#webgl-container {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  z-index: 1;
 }
 
-/* Canvas Hạt Khói Trầm & Mưa Sen */
-.effect-canvas {
+#webgl-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* Lớp Phủ UI Overlay */
+.overlay-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.overlay-container > * {
+  pointer-events: auto;
+}
+
+/* ========================================================
+   1. THANH HEADER TRÊN CÙNG
+   ======================================================== */
+.top-nav-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 14px 18px;
+  background: linear-gradient(180deg, rgba(13, 6, 4, 0.9) 0%, rgba(13, 6, 4, 0) 100%);
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-dark-lacquer);
+  border: 1.5px solid var(--color-gold-deep);
+  border-radius: 30px;
+  padding: 6px 16px 6px 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7), inset 0 0 10px rgba(255, 215, 0, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+.user-avatar-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #3e1b10;
+  border: 1.5px solid var(--color-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.user-text-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-dharma-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-gold);
+  font-family: var(--font-serif);
+}
+
+.user-level-tag {
+  font-size: 9px;
+  color: #f5cd79;
+  background: rgba(255, 215, 0, 0.15);
+  padding: 1px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.temple-status-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+  color: #bbb;
+  margin-top: 2px;
+}
+
+.temple-tag {
+  color: #fff;
+  font-weight: 600;
+}
+
+.online-indicator {
+  color: #a4b0be;
+}
+
+.top-quick-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.top-btn {
+  background: var(--color-dark-lacquer);
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  color: #ffd700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.top-btn:hover {
+  background: rgba(62, 27, 16, 0.95);
+  border-color: #ffd700;
+  transform: translateY(-1px);
+}
+
+/* ========================================================
+   2. BẢNG HUD LIVE TIKTOK (GÓC PHẢI TRÊN)
+   ======================================================== */
+.live-hud-panel {
+  position: absolute;
+  top: 75px;
+  right: 18px;
+  width: 320px;
+  background: linear-gradient(135deg, rgba(35, 16, 10, 0.92) 0%, rgba(20, 8, 5, 0.96) 100%);
+  border: 2px solid var(--color-gold-deep);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 215, 0, 0.2);
+  z-index: 25;
+  padding: 10px 12px;
+  backdrop-filter: blur(8px);
+}
+
+.hud-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.25);
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+}
+
+.hud-icon {
+  font-size: 22px;
+}
+
+.hud-title-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.hud-subtitle {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: var(--color-gold);
+  font-family: var(--font-display);
+}
+
+.hud-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.hud-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hud-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 6px;
+  border-radius: 5px;
+  border-left: 3px solid var(--color-gold);
+  font-size: 10.5px;
+}
+
+.hud-item.hud-highlight {
+  border-left-color: var(--color-lotus-pink);
+  background: linear-gradient(90deg, rgba(232, 67, 147, 0.15), rgba(255, 215, 0, 0.1));
+}
+
+.gift-badge {
+  font-weight: 700;
+  color: var(--color-gold);
+}
+
+.action-desc {
+  color: #dcdde1;
+  text-align: right;
+  font-size: 10px;
+}
+
+.hud-footer {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 9.5px;
+  color: #fbc531;
+}
+
+/* ========================================================
+   3. BONG BÓNG LỜI KHẤN 3D CHIẾU LÊN MÀN HÌNH (MẪU 2)
+   ======================================================== */
+.bubbles-layer {
   position: absolute;
   top: 0;
   left: 0;
@@ -62,866 +277,299 @@ body.pagoda-body {
   z-index: 15;
 }
 
-/* ========================================================
-   MÀN HÌNH HUD HƯỚNG DẪN TẶNG QUÀ TIKTOK TRỰC QUAN
-   ======================================================== */
-.live-hud-panel {
+/* Nhãn Tên & Cấp Độ Trên Đầu Nhân Vật 3D */
+.char-3d-nametag {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  width: 330px;
-  background: linear-gradient(135deg, rgba(35, 16, 10, 0.92) 0%, rgba(20, 8, 5, 0.96) 100%);
-  border: 2px solid var(--color-gold-deep);
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(255, 215, 0, 0.2);
-  z-index: 25;
-  padding: 12px 14px;
-  backdrop-filter: blur(8px);
-  animation: fadeInDown 0.8s ease-out;
-}
-
-.hud-header {
+  transform: translate(-50%, -100%);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.25);
-  padding-bottom: 8px;
-  margin-bottom: 8px;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
 }
 
-.hud-icon {
-  font-size: 26px;
-  filter: drop-shadow(0 0 6px var(--color-lotus-pink));
-  animation: pulse 2.5s infinite;
-}
-
-.hud-title-box {
-  display: flex;
-  flex-direction: column;
-}
-
-.hud-subtitle {
-  font-size: 9px;
-  letter-spacing: 2px;
-  color: var(--color-gold);
-  font-family: var(--font-display);
-}
-
-.hud-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 0.5px;
-}
-
-.hud-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.hud-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(255, 255, 255, 0.04);
-  padding: 5px 8px;
-  border-radius: 6px;
-  border-left: 3px solid var(--color-gold);
-  transition: all 0.25s ease;
-}
-
-.hud-item:hover {
-  background: rgba(255, 215, 0, 0.1);
-  transform: translateX(2px);
-}
-
-.hud-item.hud-highlight {
-  border-left-color: var(--color-lotus-pink);
-  background: linear-gradient(90deg, rgba(232, 67, 147, 0.15), rgba(255, 215, 0, 0.1));
-}
-
-.gift-badge {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--color-gold);
-}
-
-.action-desc {
-  font-size: 11px;
-  color: #dcdde1;
-  text-align: right;
-}
-
-.hud-footer {
-  margin-top: 8px;
-  padding-top: 6px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.15);
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.hud-hint {
+.nametag-dharma {
   font-size: 10px;
-  color: #fbc531;
-}
-
-.hud-hint strong {
+  font-weight: 700;
   color: #fff;
+  background: rgba(10, 5, 3, 0.82);
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  padding: 1px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+
+.nametag-level {
+  font-size: 8px;
+  color: var(--color-gold);
+  background: rgba(0, 0, 0, 0.6);
+  padding: 0 4px;
+  border-radius: 4px;
+  margin-top: 1px;
+}
+
+/* Vương miện sen vàng cho nhân vật trung tâm / VIP */
+.char-crown-badge {
+  font-size: 14px;
+  margin-bottom: -3px;
+  filter: drop-shadow(0 0 6px #ffd700);
+  animation: crownFloat 2s ease-in-out infinite;
+}
+
+/* Bong bóng khấn nguyện như trong ảnh Mẫu 2 */
+.prayer-speech-bubble {
+  position: absolute;
+  transform: translate(-50%, -125%);
+  background: linear-gradient(135deg, rgba(28, 12, 7, 0.94), rgba(15, 6, 3, 0.96));
+  border: 1.5px solid var(--color-gold);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 12px;
+  white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8), 0 0 10px rgba(255, 215, 0, 0.3);
+  pointer-events: none;
+  animation: popPrayer 4.5s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  z-index: 20;
+}
+
+.prayer-speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px 6px 0 6px;
+  border-style: solid;
+  border-color: var(--color-gold) transparent transparent transparent;
 }
 
 /* ========================================================
-   SỔ CÔNG ĐỨC VÀNG (GÓC TRÁI)
+   4. WIDGET ĐẾM TRÀNG HẠT 108 HẠT
    ======================================================== */
-.merit-book-panel {
+.beads-counter-widget {
   position: absolute;
-  top: 15px;
-  left: 15px;
-  width: 260px;
-  max-height: 230px;
-  background: rgba(25, 12, 8, 0.88);
-  border: 1.5px solid var(--color-gold-deep);
-  border-radius: 10px;
-  padding: 10px;
-  z-index: 20;
-  backdrop-filter: blur(6px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+  bottom: 150px;
+  left: 20px;
+  background: var(--color-dark-lacquer);
+  border: 2px solid var(--color-gold);
+  border-radius: 14px;
+  padding: 10px 16px;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.8);
+  backdrop-filter: blur(8px);
 }
 
-.panel-tag {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--color-gold);
-  letter-spacing: 1px;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
-  padding-bottom: 5px;
-  margin-bottom: 6px;
-  text-align: center;
+.beads-counter-widget.show {
+  display: flex;
 }
 
-.merit-list {
-  list-style: none;
-  overflow-y: auto;
-  max-height: 175px;
+.beads-ring {
+  font-size: 28px;
+  filter: drop-shadow(0 0 6px #ffd700);
+}
+
+.beads-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
-.merit-list::-webkit-scrollbar {
-  width: 3px;
-}
-
-.merit-list::-webkit-scrollbar-thumb {
-  background: var(--color-gold-deep);
-  border-radius: 2px;
-}
-
-.merit-entry {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
-  padding: 3px 6px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 4px;
-}
-
-.merit-entry.top-1 {
-  background: rgba(255, 215, 0, 0.15);
-  border-left: 2px solid var(--color-gold);
-  color: #ffd700;
-  font-weight: bold;
-}
-
-.merit-name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 140px;
-}
-
-.merit-coins {
-  font-size: 10px;
+.beads-label {
+  font-size: 9px;
+  letter-spacing: 1px;
   color: var(--color-gold);
+  font-weight: 700;
 }
 
-.merit-empty {
+.beads-number {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  font-family: var(--font-serif);
+}
+
+.beads-click-btn {
+  background: linear-gradient(135deg, #b7791f, #8c531b);
+  border: none;
+  border-radius: 20px;
+  color: #fff;
+  font-weight: 700;
   font-size: 11px;
-  color: #7f8c8d;
-  font-style: italic;
-  text-align: center;
-  padding: 15px 0;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.beads-click-btn:active {
+  transform: scale(0.95);
+}
+
+.beads-close-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 /* ========================================================
-   LOCAL IP VISITOR BADGE (DANH XƯNG NGƯỜI XEM QUA WEB IP)
+   5. BẢNG CÔNG CỤ TƯƠNG TÁC DƯỚI ĐÁY (BOTTOM ACTION BAR)
+   Phong cách Mẫu 1 (Rounded Pill Buttons)
    ======================================================== */
-.visitor-ip-badge {
-  position: absolute;
-  top: 15px;
-  left: 290px;
-  background: rgba(30, 15, 10, 0.85);
-  border: 1px solid rgba(255, 215, 0, 0.4);
-  border-radius: 20px;
-  padding: 6px 14px;
+.bottom-action-bar {
+  background: linear-gradient(180deg, rgba(16, 7, 4, 0) 0%, rgba(16, 7, 4, 0.95) 30%, rgba(12, 5, 3, 0.98) 100%);
+  padding: 12px 20px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  transition: transform 0.3s ease;
+}
+
+.bottom-action-bar.hidden-obs {
+  transform: translateY(120%);
+}
+
+.action-pills-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pill-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  z-index: 22;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-  backdrop-filter: blur(5px);
-}
-
-.ip-icon {
-  font-size: 18px;
-}
-
-.ip-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.ip-label {
-  font-size: 9px;
-  color: #aaa;
-  text-transform: uppercase;
-}
-
-.ip-name {
-  font-size: 12px;
-  color: var(--color-gold);
-}
-
-/* ========================================================
-   KHÔNG GIAN CHÁNH ĐIỆN CHÙA
-   ======================================================== */
-.main-sanctuary {
-  position: relative;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 10px 20px 100px 20px;
-  overflow-y: auto;
-  perspective: 1000px;
-}
-
-/* Mái Vòm & Hoành Phi Câu Đối Sơn Son Thếp Vàng */
-.sanctuary-roof {
-  position: relative;
-  width: 100%;
-  max-width: 900px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 10px;
-  margin-bottom: 10px;
-}
-
-.pillar {
-  width: 44px;
-  height: 220px;
-  background: linear-gradient(to right, #241108, #421e10 40%, #572916 60%, #1f0d06);
-  border: 2px solid #572916;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
-}
-
-.couplet-text {
-  writing-mode: vertical-rl;
-  text-orientation: upright;
-  font-family: var(--font-serif);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 5px;
-  color: var(--color-gold);
-  text-shadow: 0 0 4px rgba(255, 215, 0, 0.6);
-}
-
-.horizontal-board {
-  flex: 1;
-  margin: 0 20px;
-  background: linear-gradient(180deg, #6b0c0c, #4a0606);
-  border: 4px solid var(--color-gold-deep);
-  border-radius: 8px;
-  padding: 8px 20px;
-  text-align: center;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), inset 0 0 15px rgba(255, 215, 0, 0.2);
-}
-
-.board-sub {
-  display: block;
-  font-size: 11px;
-  letter-spacing: 4px;
-  color: #fad390;
-  font-family: var(--font-display);
-}
-
-.board-main {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: 6px;
+  background: linear-gradient(135deg, rgba(46, 20, 11, 0.9), rgba(28, 11, 6, 0.95));
+  border: 1.5px solid var(--color-gold-deep);
+  border-radius: 24px;
+  padding: 8px 16px;
   color: #fff;
-  font-family: var(--font-serif);
-  text-shadow: 0 0 12px rgba(255, 215, 0, 0.8), 2px 2px 4px #000;
-  margin: 2px 0;
-}
-
-.board-tag {
-  display: block;
-  font-size: 10px;
-  letter-spacing: 3px;
-  color: var(--color-gold);
-}
-
-/* ========================================================
-   TƯỢNG PHẬT BỔN SƯ THÍCH CA MÂU NI & HÀO QUANG
-   ======================================================== */
-.altar-buddha-area {
-  position: relative;
-  width: 260px;
-  height: 240px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: -15px;
-  z-index: 5;
-}
-
-.buddha-halo {
-  position: absolute;
-  width: 250px;
-  height: 250px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 234, 167, 0.8) 0%, rgba(241, 196, 15, 0.4) 45%, rgba(230, 126, 34, 0.15) 70%, transparent 80%);
-  animation: rotateHalo 30s linear infinite;
-  pointer-events: none;
-}
-
-.halo-ray {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 240px;
-  height: 240px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 1px dashed rgba(255, 215, 0, 0.35);
-}
-
-.ray-1 { transform: translate(-50%, -50%) rotate(0deg); }
-.ray-2 { transform: translate(-50%, -50%) rotate(45deg); }
-.ray-3 { transform: translate(-50%, -50%) rotate(90deg); }
-.ray-4 { transform: translate(-50%, -50%) rotate(135deg); }
-
-.buddha-statue-wrapper {
-  position: relative;
-  z-index: 6;
-  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.8));
-  animation: buddhaBreath 5s ease-in-out infinite;
-}
-
-.buddha-svg-box {
-  width: 200px;
-  height: 240px;
-}
-
-.buddha-svg {
-  width: 100%;
-  height: 100%;
-}
-
-/* ========================================================
-   BÀN THỜ TAM BẢO (LƯ HƯƠNG, CHUÔNG, MÕ, MÂM QUẢ)
-   ======================================================== */
-.altar-table-section {
-  position: relative;
-  width: 100%;
-  max-width: 820px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 10;
-}
-
-.altar-table {
-  position: relative;
-  width: 100%;
-  height: 110px;
-  background: linear-gradient(to bottom, #5c1810 0%, #3d0c07 35%, #240502 100%);
-  border: 3px solid #b7791f;
-  border-radius: 12px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9), inset 0 2px 8px rgba(255, 215, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding: 0 20px;
-}
-
-/* Đèn Nến Hoa Sen */
-.altar-candle {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.candle-flame {
-  width: 12px;
-  height: 20px;
-  background: radial-gradient(ellipse at bottom, #fff 0%, #fffa65 40%, #ff9f1a 70%, transparent 100%);
-  border-radius: 50% 50% 35% 35%;
-  box-shadow: 0 0 16px #ff9f1a, 0 0 30px #e67e22;
-  animation: flicker 1.8s infinite alternate ease-in-out;
-}
-
-.candle-stand {
-  font-size: 24px;
-  margin-top: -4px;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
-}
-
-/* Khí cụ: Chuông & Mõ */
-.sacred-instrument {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255, 215, 0, 0.2);
+  backdrop-filter: blur(6px);
+  transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
 
-.sacred-instrument:hover {
-  transform: scale(1.1);
+.pill-btn:hover {
+  background: linear-gradient(135deg, rgba(74, 32, 17, 0.95), rgba(46, 20, 11, 0.98));
+  border-color: #ffd700;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.8), 0 0 12px rgba(255, 215, 0, 0.5);
 }
 
-.bell-dome {
-  font-size: 38px;
-  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+.pill-btn:active {
+  transform: translateY(0);
 }
 
-.woodblock-shape {
-  font-size: 34px;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+.pill-btn.pill-btn-primary {
+  background: linear-gradient(135deg, #8b1111, #520909);
+  border-color: #ffd700;
 }
 
-.inst-label {
-  font-size: 10px;
-  color: var(--color-gold);
-  font-weight: 500;
-  margin-top: 2px;
+.pill-icon {
+  font-size: 16px;
 }
 
-/* Lư Hương Đồng Giữa Bàn Thờ */
-.censer-box {
-  position: relative;
+.pill-title {
+  letter-spacing: 0.5px;
+}
+
+/* Khung Gõ Lời Khấn Nhanh */
+.chat-prayer-bar {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  margin-top: -30px;
+  gap: 6px;
+  width: 100%;
+  max-width: 650px;
 }
 
-.censer-smoke-origin {
-  position: absolute;
-  top: -20px;
-  width: 6px;
-  height: 6px;
-}
-
-.incense-bundle {
+.quick-prayer-chips {
   display: flex;
   gap: 6px;
-  align-items: flex-end;
-  height: 45px;
-  margin-bottom: -5px;
-  z-index: 2;
-}
-
-.incense-stick {
-  width: 3px;
-  height: 38px;
-  background: #c0392b;
-  position: relative;
-  border-radius: 2px;
-}
-
-.incense-stick.stick-2 {
-  height: 44px;
-}
-
-.ember {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 5px;
-  height: 5px;
-  background: #ff5252;
-  border-radius: 50%;
-  box-shadow: 0 0 8px #ff1744, 0 0 16px #ff7675;
-  animation: emberGlow 1.2s infinite alternate;
-}
-
-.bronze-censer {
-  width: 80px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.censer-lip {
-  width: 76px;
-  height: 8px;
-  background: linear-gradient(to right, #8c6d1f, #f1c40f, #8c6d1f);
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.6);
-}
-
-.censer-body {
-  width: 68px;
-  height: 38px;
-  background: radial-gradient(circle at 50% 30%, #ffd700, #b7791f 60%, #684912 100%);
-  border-radius: 0 0 24px 24px;
-  display: flex;
-  align-items: center;
+  overflow-x: auto;
+  padding-bottom: 2px;
   justify-content: center;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.7);
 }
 
-.censer-motif {
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  color: #3e2723;
-  font-family: var(--font-serif);
+.quick-prayer-chips::-webkit-scrollbar {
+  display: none;
 }
 
-.censer-legs {
-  width: 54px;
-  display: flex;
-  justify-content: space-between;
-  margin-top: -2px;
-}
-
-.leg {
-  width: 8px;
-  height: 10px;
-  background: #684912;
-  border-radius: 0 0 4px 4px;
-}
-
-/* Mâm Ngũ Quả & Hoa Sen */
-.offering-tray {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 4px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 215, 0, 0.2);
-}
-
-.tray-fruit {
-  font-size: 20px;
-  letter-spacing: -2px;
-}
-
-.tray-lotus {
-  font-size: 18px;
-  margin-top: -6px;
-  filter: drop-shadow(0 0 6px var(--color-lotus-pink));
-}
-
-.tray-label {
-  font-size: 9px;
-  color: #fbc531;
-}
-
-/* Ống Thẻ Xăm Quan Âm */
-.divination-box {
-  position: absolute;
-  right: 15px;
-  bottom: -45px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: transform 0.2s ease;
-  z-index: 12;
-}
-
-.divination-box:hover {
-  transform: translateY(-4px);
-}
-
-.tube-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.sticks-group {
-  display: flex;
-  gap: 3px;
-  font-size: 14px;
-  color: #f5cd79;
-  margin-bottom: -5px;
-}
-
-.tube-cylinder {
-  background: linear-gradient(to right, #4a2818, #7a3e1d, #4a2818);
-  border: 2px solid #b7791f;
-  border-radius: 4px;
-  padding: 6px 10px;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--color-gold);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.6);
-}
-
-.tube-sub {
-  font-size: 9px;
-  color: #fad390;
-  margin-top: 2px;
-}
-
-/* ========================================================
-   THẢM CHÍNH ĐẠO & HỆ THỐNG BỒ ĐOÀN NGỒI THIỀN (48 CHỖ)
-   ======================================================== */
-.congregation-hall {
-  position: relative;
-  width: 100%;
-  max-width: 960px;
-  min-height: 420px;
-  margin-top: 35px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  transform: rotateX(20deg);
-  transform-style: preserve-3d;
-}
-
-/* Thảm Chính Đạo Đi Ở Giữa */
-.sacred-carpet {
-  position: absolute;
-  top: 0;
-  width: 90px;
-  height: 100%;
-  background: linear-gradient(to bottom, #741b14 0%, #52130e 50%, #3e0e0a 100%);
-  border-left: 3px solid #b7791f;
-  border-right: 3px solid #b7791f;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-around;
-  z-index: 1;
-}
-
-.carpet-motif {
-  font-size: 22px;
-  opacity: 0.35;
-  filter: grayscale(0.5);
-}
-
-/* Lưới Bồ Đoàn 48 Chỗ Ngồi */
-.cushions-grid {
-  position: relative;
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 22px 14px;
-  z-index: 3;
-  padding: 10px;
-}
-
-/* 1 Bồ Đoàn Ngồi Thiền (Cushion) */
-.cushion-slot {
-  position: relative;
-  height: 75px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  transition: all 0.3s ease;
-}
-
-/* Đệm Bồ Đoàn Cơ Bản */
-.cushion-pad {
-  width: 44px;
-  height: 22px;
-  background: radial-gradient(ellipse at center, #8e44ad, #5e2750);
-  background: radial-gradient(ellipse at center, #9c4f24 0%, #5c2c12 70%, #3b1908 100%);
-  border-radius: 50%;
-  border: 2px solid #b7791f;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.7);
-  position: relative;
-  transition: all 0.3s ease;
-}
-
-.cushion-pad::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 16px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255, 215, 0, 0.3);
-}
-
-/* Khi có Phật Tử ngồi */
-.cushion-slot.occupied .cushion-pad {
-  background: radial-gradient(ellipse at center, #b7791f 0%, #784807 80%, #3b1908 100%);
-}
-
-/* Bồ Đoàn Hàng VIP Thượng Thủ */
-.cushion-slot.vip .cushion-pad {
-  border-color: #ffd700;
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.8), 0 8px 16px rgba(0, 0, 0, 0.8);
-}
-
-.cushion-slot.vip::before {
-  content: '🪷';
-  position: absolute;
-  bottom: -6px;
-  font-size: 14px;
-  filter: drop-shadow(0 0 6px #ffd700);
-  animation: pulse 2s infinite;
-}
-
-/* Thể Hiện Nhân Vật Phật Tử Trên Bồ Đoàn */
-.pilgrim-avatar {
-  position: relative;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #34495e;
-  border: 2px solid var(--color-gold);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: -6px;
-  z-index: 2;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.6);
-  animation: breatheSlow 4s ease-in-out infinite;
-}
-
-.pilgrim-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.pilgrim-avatar .default-icon {
-  font-size: 20px;
-}
-
-.pilgrim-name {
-  font-size: 9px;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.75);
+.chip {
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 215, 0, 0.3);
-  padding: 1px 4px;
-  border-radius: 4px;
-  white-space: nowrap;
-  max-width: 75px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 3px;
-  z-index: 2;
-}
-
-/* Bong Bóng Chat Nổi Trên Đầu Nhân Vật */
-.chat-speech-bubble {
-  position: absolute;
-  top: -40px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #fff;
-  color: #2c3e50;
-  font-size: 10px;
-  font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 8px;
-  white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  z-index: 30;
-  pointer-events: none;
-  animation: popBubble 4s forwards cubic-bezier(0.18, 0.89, 0.32, 1.28);
-}
-
-.chat-speech-bubble::after {
-  content: '';
-  position: absolute;
-  bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 5px 5px 0 5px;
-  border-style: solid;
-  border-color: #fff transparent transparent transparent;
-}
-
-/* ========================================================
-   NHÂN VẬT HÀNH LỄ BƯỚC LÊN CHÍNH ĐIỆN (CEREMONY WALKER)
-   ======================================================== */
-.ceremony-walker {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 25;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.ceremony-walker.active {
-  animation: walkToAltar 4.5s ease-in-out forwards;
-}
-
-.walker-bubble {
-  background: rgba(0, 0, 0, 0.85);
-  border: 1px solid var(--color-gold);
-  color: #ffd700;
-  font-size: 11px;
-  font-weight: bold;
-  padding: 4px 10px;
   border-radius: 12px;
-  margin-bottom: 6px;
+  padding: 3px 10px;
+  font-size: 10px;
+  color: #fad390;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.chip:hover {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: #ffd700;
+  color: #fff;
+}
+
+.chat-input-wrapper {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.chat-input-wrapper input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  border-radius: 20px;
+  padding: 8px 16px;
+  color: #fff;
+  font-size: 12px;
+  outline: none;
+  backdrop-filter: blur(6px);
+}
+
+.chat-input-wrapper input:focus {
+  border-color: var(--color-gold);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.send-prayer-btn {
+  background: linear-gradient(135deg, #b7791f, #8c531b);
+  border: none;
+  border-radius: 20px;
+  padding: 8px 18px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.btn-clean-mode {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 8px 14px;
+  color: #bbb;
+  font-size: 11px;
+  cursor: pointer;
   white-space: nowrap;
 }
 
-.walker-avatar {
-  font-size: 36px;
-  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
-}
-
-.walker-name {
-  font-size: 11px;
-  color: #fff;
-  background: #6b0c0c;
-  padding: 2px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--color-gold);
-  margin-top: 2px;
-}
-
-.walker-offering {
-  font-size: 22px;
-  margin-top: -6px;
-}
-
 /* ========================================================
-   BANNER XƯỚNG SỚ CẦU AN ĐỈNH ĐIỆN
+   6. BANNER SỚ CẦU AN & MODAL QUẺ XĂM
    ======================================================== */
 .chanting-banner {
   position: absolute;
@@ -929,10 +577,10 @@ body.pagoda-body {
   left: 50%;
   transform: translateX(-50%);
   width: 90%;
-  max-width: 780px;
+  max-width: 720px;
   background: linear-gradient(135deg, rgba(82, 19, 14, 0.96), rgba(30, 8, 5, 0.98));
   border: 2px solid var(--color-gold);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 10px 18px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(255, 215, 0, 0.4);
   z-index: 40;
@@ -963,16 +611,13 @@ body.pagoda-body {
   font-family: var(--font-serif);
 }
 
-/* ========================================================
-   MODAL QUẺ XĂM QUAN THẾ ÂM
-   ======================================================== */
 .fortune-modal {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.78);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -997,13 +642,7 @@ body.pagoda-body {
   border-radius: 14px;
   padding: 24px;
   color: #3e2723;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 30px rgba(183, 121, 31, 0.2);
-  transform: scale(0.9);
-  transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-}
-
-.fortune-modal.open .modal-card {
-  transform: scale(1);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.9);
 }
 
 .modal-close-btn {
@@ -1021,8 +660,8 @@ body.pagoda-body {
 .card-header {
   text-align: center;
   border-bottom: 2px solid #cfa635;
-  padding-bottom: 10px;
-  margin-bottom: 12px;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .card-tag {
@@ -1033,13 +672,13 @@ body.pagoda-body {
 }
 
 .card-fortune-num {
-  font-size: 14px;
+  font-size: 13px;
   color: #b71540;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .card-fortune-title {
-  font-size: 22px;
+  font-size: 20px;
   font-family: var(--font-serif);
   color: #5c1810;
   font-weight: 700;
@@ -1048,284 +687,87 @@ body.pagoda-body {
 .poem-block {
   background: rgba(183, 121, 31, 0.08);
   border-left: 3px solid #b71540;
-  padding: 10px 14px;
+  padding: 8px 12px;
   font-family: var(--font-serif);
   font-style: italic;
-  line-height: 1.6;
-  margin-bottom: 12px;
-  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+  font-size: 12.5px;
 }
 
 .analysis-block, .advice-block {
-  margin-bottom: 10px;
-  font-size: 12px;
-  line-height: 1.5;
+  margin-bottom: 8px;
+  font-size: 11.5px;
+  line-height: 1.4;
 }
 
 .analysis-block h4, .advice-block h4 {
-  font-size: 12px;
+  font-size: 11.5px;
   color: #8c531b;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .card-footer {
   text-align: center;
-  margin-top: 14px;
-  padding-top: 10px;
+  margin-top: 10px;
+  padding-top: 8px;
   border-top: 1px dashed #b7791f;
-  font-size: 10px;
+  font-size: 9.5px;
   color: #784807;
   font-style: italic;
 }
 
 /* ========================================================
-   BỘ ĐIỀU KHIỂN TƯƠNG TÁC LOCAL & STREAMER (CONTROL DOCK)
+   7. KEYFRAME ANIMATIONS
    ======================================================== */
-.interaction-control-dock {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background: rgba(18, 9, 6, 0.95);
-  border-top: 2px solid var(--color-gold-deep);
-  z-index: 35;
-  backdrop-filter: blur(10px);
-  transition: transform 0.35s ease;
-}
-
-.interaction-control-dock.collapsed {
-  transform: translateY(calc(100% - 28px));
-}
-
-.dock-handle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 5px 20px;
-  background: rgba(45, 20, 10, 0.9);
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  color: var(--color-gold);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
-}
-
-.dock-handle:hover {
-  background: rgba(65, 30, 15, 0.95);
-}
-
-.dock-content {
-  padding: 10px 20px 12px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.btn-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  justify-content: center;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: linear-gradient(135deg, #3d1a0e, #291108);
-  border: 1px solid var(--color-gold-deep);
-  border-radius: 6px;
-  padding: 6px 12px;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.4);
-}
-
-.action-btn:hover {
-  background: linear-gradient(135deg, #5c2916, #3d1a0e);
-  border-color: #ffd700;
-  transform: translateY(-2px);
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
-}
-
-.btn-so {
-  border-color: var(--color-lotus-pink);
-  background: linear-gradient(135deg, #681d3f, #3b0d21);
-}
-
-.dock-chat-box {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  max-width: 820px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.dock-chat-box input {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 6px;
-  padding: 7px 12px;
-  color: #fff;
-  font-size: 12px;
-  outline: none;
-}
-
-.dock-chat-box input:focus {
-  border-color: var(--color-gold);
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.chat-send-btn {
-  background: linear-gradient(135deg, #b7791f, #8c531b);
-  border: none;
-  border-radius: 6px;
-  padding: 7px 16px;
-  color: #fff;
-  font-weight: 700;
-  font-size: 12px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.btn-sim-visitor, .btn-clean-mode {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  padding: 7px 12px;
-  color: #dcdde1;
-  font-size: 11px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-/* ========================================================
-   KEYFRAME ANIMATIONS
-   ======================================================== */
-@keyframes rotateHalo {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes buddhaBreath {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-4px) scale(1.01); }
-}
-
-@keyframes flicker {
-  0%, 100% { transform: scale(1); opacity: 0.95; }
-  50% { transform: scale(1.08, 0.92) skewX(2deg); opacity: 1; }
-}
-
-@keyframes emberGlow {
-  0% { transform: translateX(-50%) scale(0.9); opacity: 0.7; }
-  100% { transform: translateX(-50%) scale(1.3); opacity: 1; }
-}
-
-@keyframes breatheSlow {
+@keyframes crownFloat {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-3px); }
 }
 
-@keyframes popBubble {
-  0% { opacity: 0; transform: translateX(-50%) translateY(10px) scale(0.8); }
-  15% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-  85% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-15px) scale(0.9); }
-}
-
-@keyframes walkToAltar {
-  0% {
-    opacity: 0;
-    bottom: 20px;
-    transform: translateX(-50%) scale(0.8);
-  }
-  20% {
-    opacity: 1;
-    bottom: 80px;
-    transform: translateX(-50%) scale(0.9);
-  }
-  45% {
-    bottom: 170px;
-    transform: translateX(-50%) scale(1);
-  }
-  55% {
-    bottom: 170px;
-    transform: translateX(-50%) scale(1) translateY(8px);
-  }
-  75% {
-    bottom: 170px;
-    transform: translateX(-50%) scale(1) translateY(0);
-  }
-  90% {
-    opacity: 1;
-    bottom: 80px;
-    transform: translateX(-50%) scale(0.9);
-  }
-  100% {
-    opacity: 0;
-    bottom: 20px;
-    transform: translateX(-50%) scale(0.8);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.12); }
-}
-
-@keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(-15px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes popPrayer {
+  0% { opacity: 0; transform: translate(-50%, -100%) scale(0.8); }
+  12% { opacity: 1; transform: translate(-50%, -125%) scale(1); }
+  85% { opacity: 1; transform: translate(-50%, -125%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -140%) scale(0.9); }
 }
 
 /* ========================================================
-   RESPONSIVE DESIGN (HỖ TRỢ OBS STUDIO & TIKTOK DỌC 9:16)
+   8. RESPONSIVE DESIGN (HỖ TRỢ OBS STUDIO & TIKTOK DỌC 9:16)
    ======================================================== */
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .live-hud-panel {
-    width: 290px;
+    top: 75px;
+    right: 12px;
+    width: 270px;
     padding: 8px 10px;
   }
-  .merit-book-panel {
-    width: 210px;
+  .hud-title { font-size: 11px; }
+  .hud-item { font-size: 9.5px; }
+  .action-pills-row {
+    gap: 6px;
   }
-  .pillar {
-    display: none;
-  }
-  .cushions-grid {
-    grid-template-columns: repeat(6, 1fr);
+  .pill-btn {
+    padding: 6px 12px;
+    font-size: 11px;
   }
 }
 
-@media (max-aspect-ratio: 9/16) or (max-width: 600px) {
-  /* Tối ưu hóa tuyệt đối cho khung hình dọc TikTok Live 1080x1920 */
+@media (max-aspect-ratio: 9/16) or (max-width: 500px) {
+  .top-nav-bar {
+    padding: 10px;
+  }
   .live-hud-panel {
-    top: 10px;
-    right: 10px;
+    top: 65px;
     left: 10px;
+    right: 10px;
     width: auto;
   }
-  .merit-book-panel {
-    display: none; /* Ẩn bớt để tập trung khung nhìn dọc */
+  .action-pills-row {
+    justify-content: flex-start;
+    overflow-x: auto;
+    width: 100%;
+    padding-bottom: 4px;
   }
-  .visitor-ip-badge {
-    top: auto;
-    bottom: 100px;
-    left: 15px;
-  }
-  .cushions-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 15px 10px;
-  }
-  .sanctuary-roof {
-    margin-top: 130px;
-  }
+  .action-pills-row::-webkit-scrollbar { display: none; }
 }
