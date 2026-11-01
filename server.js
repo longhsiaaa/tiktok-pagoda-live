@@ -17,6 +17,15 @@ let TikTokLib = null;
 async function getTikTokLib() {
   if (!TikTokLib) {
     TikTokLib = await import('tiktok-live-connector');
+    const { TikTokLiveConnection, RouteConfig } = TikTokLib;
+    // Chặn vĩnh viễn các lệnh fetch gift API gọi tới EulerStream gây lỗi 'Business plan required'
+    if (RouteConfig) {
+      RouteConfig.fetchRoomGifts = async () => [];
+      RouteConfig.fetchRoomGiftsFromProvider = async () => [];
+    }
+    if (TikTokLiveConnection && TikTokLiveConnection.prototype) {
+      TikTokLiveConnection.prototype.fetchAvailableGifts = async () => [];
+    }
   }
   return TikTokLib;
 }
@@ -611,7 +620,7 @@ async function connectTikTok(uniqueId) {
   const cleanUser = String(uniqueId || '')
     .trim()
     .replace(/^.*tiktok\.com\/@?/i, '')
-    .replace(/^@/, '')
+    .replace(/^@+/, '')
     .replace(/\/.*$/, '');
 
   if (!cleanUser) {
@@ -639,7 +648,7 @@ async function connectTikTok(uniqueId) {
     const conn = new TikTokLiveConnection(cleanUser, {
       processInitialData: false,
       fetchRoomInfoOnConnect: false,
-      enableExtendedGiftInfo: true
+      enableExtendedGiftInfo: false
     });
 
     conn.on(ControlEvent.CONNECTED, state => {
@@ -729,6 +738,26 @@ async function connectTikTok(uniqueId) {
       broadcastStatsSync();
     });
 
+    // Bảng ánh xạ giá trị kim cương (xu TikTok) nội bộ cho các món quà phổ biến
+    const COMMON_GIFT_DIAMONDS = {
+      'rose': 1, 'hoa hồng': 1, 'hoa hong': 1,
+      'tiktok': 1, 'nốt nhạc': 1, 'not nhac': 1,
+      'finger heart': 5, 'bắn tim': 5, 'ban tim': 5, 'tim': 5,
+      'flower': 1, 'hoa': 1,
+      'perfume': 20, 'nước hoa': 20, 'nuoc hoa': 20,
+      'doughnut': 30, 'donut': 30, 'bánh rán': 30, 'banh ran': 30,
+      'paper crane': 99, 'hạc giấy': 99, 'hac giay': 99,
+      'hand hearts': 100, 'trái tim': 100, 'trai tim': 100,
+      'confetti': 100,
+      'corgi': 299,
+      'money gun': 500, 'súng tiền': 500, 'sung tien': 500,
+      'swan': 699, 'thiên nga': 699, 'thien nga': 699,
+      'dragon': 1000, 'rồng': 1000, 'rong': 1000,
+      'phoenix': 25999, 'phượng hoàng': 25999,
+      'lion': 29999, 'sư tử': 29999, 'su tu': 29999,
+      'universe': 34999, 'vũ trụ': 34999, 'vu tru': 34999
+    };
+
     // Bộ theo dõi combo streak quà tặng để cộng dồn xu ngay lập tức, không bị nuốt quà
     const giftStreakTracker = new Map();
 
@@ -738,7 +767,10 @@ async function connectTikTok(uniqueId) {
       const userId = `tt_${uniqueId}`;
       const giftId = String(data.giftId || data.giftDetails?.giftId || 'gift');
       const giftName = data.giftDetails?.giftName || data.extendedGiftInfo?.name || data.giftName || 'Hoa Hồng';
-      const diamondUnit = Number(data.giftDetails?.diamondCount ?? data.extendedGiftInfo?.diamond_count ?? data.diamondCount ?? 1) || 1;
+      const cleanGiftName = String(giftName).toLowerCase().trim();
+      const mappedCoins = COMMON_GIFT_DIAMONDS[cleanGiftName] || 0;
+
+      const diamondUnit = Number(data.giftDetails?.diamondCount ?? data.extendedGiftInfo?.diamond_count ?? data.diamondCount ?? mappedCoins) || mappedCoins || 1;
 
       const streakKey = `${userId}_${giftId}`;
       const currentRepeat = Number(data.repeatCount || 1);

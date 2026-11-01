@@ -430,11 +430,29 @@
   }
 
   function generateDevoteeTraits(uniqueKey) {
+    const k = String(uniqueKey || '').toLowerCase();
     const hash = hashString(uniqueKey || 'phat_tu');
-    const isMale = (hash % 2 === 1);
+
+    // Phân định Nam / Nữ: Tự động nhận diện từ khóa hoặc băm 50/50 ngẫu nhiên
+    let isMale = (hash % 2 === 1);
+    if (k.includes('nam') || k.includes('ong') || k.includes('chu') || k.includes('anh') || k.includes('boy') || k.includes('male')) {
+      isMale = true;
+    } else if (k.includes('nu') || k.includes('ba') || k.includes('co') || k.includes('chi') || k.includes('girl') || k.includes('female')) {
+      isMale = false;
+    }
+
     const genderKey = isMale ? 'male' : 'female';
     const gender = isMale ? 'Cư sĩ Nam' : 'Cư sĩ Nữ';
-    const outfit = NFT_OUTFITS[hash % NFT_OUTFITS.length];
+
+    // Chọn bộ trang phục: Ưu tiên nếu có chỉ định, không thì băm xoay vòng 6 bộ
+    let outfit = NFT_OUTFITS[hash % NFT_OUTFITS.length];
+    for (const ot of NFT_OUTFITS) {
+      if (k.includes(`_${ot.id}`) || k.includes(ot.id)) {
+        outfit = ot;
+        break;
+      }
+    }
+
     const accessory = NFT_ACCESSORIES[(hash >> 3) % NFT_ACCESSORIES.length];
     const spriteSrc = `${ASSETS_PATH}devotee_${genderKey}_${outfit.id}.png`;
 
@@ -509,6 +527,28 @@
     initHexagonalGrid();
     realDevoteeMap.clear();
     realDevoteeOrder.length = 0;
+
+    // Khởi tạo các vị Cư sĩ Nam & Nữ ban đầu đại diện cho Đạo Tràng Tổ Ong (trải đều 12 bộ đồ Nam/Nữ sắc nét)
+    const SEED_DEVOTEES = [
+      { id: 'seed_nam_lam', name: 'Phúc Thiện', isMale: true, outfit: 'lam' },
+      { id: 'seed_nu_lam', name: 'Diệu Tâm', isMale: false, outfit: 'lam' },
+      { id: 'seed_nam_nau', name: 'Minh Tuệ', isMale: true, outfit: 'nau' },
+      { id: 'seed_nu_nau', name: 'Thanh Nhã', isMale: false, outfit: 'nau' },
+      { id: 'seed_nam_vang', name: 'Trí Dũng', isMale: true, outfit: 'vang' },
+      { id: 'seed_nu_vang', name: 'Bảo An', isMale: false, outfit: 'vang' },
+      { id: 'seed_nam_trang', name: 'Quang Minh', isMale: true, outfit: 'trang' },
+      { id: 'seed_nu_trang', name: 'Bạch Liên', isMale: false, outfit: 'trang' },
+      { id: 'seed_nam_ngoc', name: 'Vạn Hạnh', isMale: true, outfit: 'ngoc' },
+      { id: 'seed_nu_ngoc', name: 'Diệu Âm', isMale: false, outfit: 'ngoc' },
+      { id: 'seed_nam_hoang_kim', name: 'Chân Như', isMale: true, outfit: 'hoang_kim' },
+      { id: 'seed_nu_hoang_kim', name: 'Diệu Thiện', isMale: false, outfit: 'hoang_kim' },
+      { id: 'seed_nam_lam2', name: 'Đức Trí', isMale: true, outfit: 'lam' },
+      { id: 'seed_nu_lam2', name: 'Huệ Năng', isMale: false, outfit: 'lam' }
+    ];
+
+    SEED_DEVOTEES.forEach(seed => {
+      getOrCreateRealDevotee(seed.id, seed.name, '');
+    });
   }
 
   /**
@@ -1242,7 +1282,7 @@
 
         if (data.success && data.status === 'connected') {
           isTikTokConnected = true;
-          const cleanName = data.username.replace(/^@/, '');
+          const cleanName = String(data.username || user).replace(/^@+/, '');
           btnConnectTikTok.textContent = 'Ngắt Kết Nối';
           btnConnectTikTok.style.background = '#27ae60';
           const streamTikTokName = document.getElementById('streamTikTokName');
@@ -1252,9 +1292,10 @@
           isTikTokConnected = false;
           btnConnectTikTok.textContent = 'Thử Lại';
           btnConnectTikTok.style.background = '#c0392b';
+          const cleanUser = String(user).replace(/^@+/, '');
           const errMsg = data.error || 'Không thể kết nối phòng Live';
           showPrayerBubble(`⚠️ ${errMsg}`);
-          alert(`[Thông báo kết nối TikTok Live]:\n${errMsg}\n\nLưu ý: Kênh @${user} cần đang phát trực tiếp (Live) trên TikTok thì hệ thống mới lấy được bình luận và quà tặng.`);
+          alert(`[Thông báo kết nối TikTok Live]:\n${errMsg}\n\nLưu ý: Kênh @${cleanUser} cần đang phát trực tiếp (Live) trên TikTok thì hệ thống mới lấy được bình luận và quà tặng.`);
         }
       } catch (err) {
         isTikTokConnected = false;
