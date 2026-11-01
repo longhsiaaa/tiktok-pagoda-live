@@ -655,7 +655,48 @@ body.studio-body {
 .audio-toggle-row {
   display: flex;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+}
+
+.bgm-selector-group {
+  margin: 10px 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.selector-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-gold);
+  letter-spacing: 0.4px;
+}
+
+.bgm-select-dropdown {
+  width: 100%;
+  padding: 8px 10px;
+  background: rgba(26, 12, 5, 0.92);
+  color: #f7e2b8;
+  border: 1px solid rgba(255, 215, 0, 0.45);
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.bgm-select-dropdown:hover, .bgm-select-dropdown:focus {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  background: rgba(38, 18, 8, 0.98);
+}
+
+.bgm-select-dropdown option {
+  background: #1a0a04;
+  color: #fff;
+  padding: 6px;
 }
 
 .toggle-pill {

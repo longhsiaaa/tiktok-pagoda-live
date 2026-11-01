@@ -29,13 +29,12 @@
 
   // State
   let audioCtx = null;
-  let bgmGainNode = null;
   let isSoundActive = false;
   let isVoiceEnabled = true;
   let isBgmEnabled = true;
-  let isBgmRunning = false;
-  let bgmIntervalId = null;
-  let bgmVolume = 0.89;
+  let bgmAudio = null;
+  let currentBgmTrack = 'chu_dai_bi.mp3';
+  let bgmVolume = 0.45;
   let voiceVolume = 0.86;
   let woodblockHits = 9317;
   let totalIncense = 1022;
@@ -47,6 +46,7 @@
   let currentTtsAudio = null;
   let currentTtsUrl = null;
   let currentTtsAbortController = null;
+  let isTikTokConnected = false;
 
   // DOM Elements - Left Screen (Stream Viewport)
   const streamFrame = document.getElementById('streamFrame');
@@ -71,6 +71,7 @@
   const voiceVolumeSlider = document.getElementById('voiceVolumeSlider');
   const bgmValText = document.getElementById('bgmValText');
   const voiceValText = document.getElementById('voiceValText');
+  const bgmTrackSelect = document.getElementById('bgmTrackSelect');
   const btnToggleObsMode = document.getElementById('btnToggleObsMode');
   const btnConnectTikTok = document.getElementById('btnConnectTikTok');
   const inputTikTokUser = document.getElementById('inputTikTokUser');
@@ -357,7 +358,7 @@
   }
 
   // ========================================================
-  // 4. BỘ TỔNG HỢP ÂM THANH CHÙA THUẦN CODE & NHẠC THIỀN
+  // 4. BỘ PHÁT NHẠC TỤNG KINH TRÌ CHÚ & HIỆU ỨNG CHÙA
   // ========================================================
   function initAudioContext() {
     if (!audioCtx) {
@@ -368,51 +369,45 @@
       audioCtx.resume();
     }
     isSoundActive = true;
-    startZenBgm();
+    startChantingBgm();
   }
 
-  // Nhạc Thiền Tịnh Tâm (Idempotent Guard)
-  function startZenBgm() {
-    if (!audioCtx || !isBgmEnabled || isBgmRunning) return;
-    isBgmRunning = true;
-
+  // Phát nhạc tụng kinh nền liên tục (Chú Đại Bi, Niệm Phật A Di Đà, Om Mani...)
+  function startChantingBgm() {
+    if (!isBgmEnabled) return;
     try {
-      const droneOsc = audioCtx.createOscillator();
-      bgmGainNode = audioCtx.createGain();
-
-      droneOsc.type = 'sine';
-      droneOsc.frequency.setValueAtTime(108, audioCtx.currentTime); // Tần số 108Hz thiền định
-
-      bgmGainNode.gain.setValueAtTime(bgmVolume * 0.15, audioCtx.currentTime);
-
-      droneOsc.connect(bgmGainNode);
-      bgmGainNode.connect(audioCtx.destination);
-      droneOsc.start();
-
-      if (bgmIntervalId) clearInterval(bgmIntervalId);
-      bgmIntervalId = setInterval(() => {
-        if (!isBgmEnabled || !audioCtx || audioCtx.state !== 'running') return;
-        const now = audioCtx.currentTime;
-        const chimeOsc = audioCtx.createOscillator();
-        const chimeGain = audioCtx.createGain();
-
-        const notes = [523.25, 659.25, 783.99, 1046.5];
-        const freq = notes[Math.floor(Math.random() * notes.length)];
-
-        chimeOsc.type = 'triangle';
-        chimeOsc.frequency.setValueAtTime(freq, now);
-        chimeGain.gain.setValueAtTime(0.001, now);
-        chimeGain.gain.linearRampToValueAtTime(bgmVolume * 0.08, now + 0.05);
-        chimeGain.gain.exponentialRampToValueAtTime(0.0001, now + 3.0);
-
-        chimeOsc.connect(chimeGain);
-        chimeGain.connect(audioCtx.destination);
-        chimeOsc.start(now);
-        chimeOsc.stop(now + 3.1);
-      }, 7000);
-
+      if (!bgmAudio) {
+        bgmAudio = new Audio(`assets/audio/${currentBgmTrack}`);
+        bgmAudio.loop = true;
+      }
+      bgmAudio.volume = isBgmEnabled ? bgmVolume : 0;
+      const playPromise = bgmAudio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(e => {
+          console.log('[BGM] Chờ tương tác người dùng để phát audio:', e.message);
+        });
+      }
     } catch (e) {
-      console.log('Zen BGM init note:', e.message);
+      console.warn('[BGM Lỗi]:', e.message);
+    }
+  }
+
+  // Chuyển bài kinh / thần chú nền
+  function changeBgmTrack(newTrack) {
+    if (!newTrack) return;
+    currentBgmTrack = newTrack;
+    if (bgmAudio) {
+      const wasPlaying = !bgmAudio.paused;
+      bgmAudio.pause();
+      bgmAudio.src = `assets/audio/${newTrack}`;
+      bgmAudio.currentTime = 0;
+      bgmAudio.loop = true;
+      bgmAudio.volume = isBgmEnabled ? bgmVolume : 0;
+      if (wasPlaying || isBgmEnabled) {
+        bgmAudio.play().catch(e => console.log('[BGM Switch]:', e.message));
+      }
+    } else if (isBgmEnabled) {
+      startChantingBgm();
     }
   }
 
@@ -722,19 +717,28 @@
     safeOn(btnToggleBgm, 'click', () => {
       isBgmEnabled = !isBgmEnabled;
       btnToggleBgm.classList.toggle('active', isBgmEnabled);
-      btnToggleBgm.textContent = isBgmEnabled ? '🎵 Nhạc Nền: BẬT' : '🎵 Nhạc Nền: TẮT';
-      if (isBgmEnabled && !isBgmRunning && audioCtx) {
-        startZenBgm();
-      } else if (bgmGainNode && audioCtx) {
-        bgmGainNode.gain.setValueAtTime(isBgmEnabled ? bgmVolume * 0.15 : 0, audioCtx.currentTime);
+      btnToggleBgm.textContent = isBgmEnabled ? '🪷 Nhạc Tụng Kinh: BẬT' : '🪷 Nhạc Tụng Kinh: TẮT';
+      if (bgmAudio) {
+        if (isBgmEnabled) {
+          bgmAudio.volume = bgmVolume;
+          bgmAudio.play().catch(e => console.log('BGM resume error:', e.message));
+        } else {
+          bgmAudio.pause();
+        }
+      } else if (isBgmEnabled) {
+        startChantingBgm();
       }
+    });
+
+    safeOn(bgmTrackSelect, 'change', e => {
+      changeBgmTrack(e.target.value);
     });
 
     safeOn(bgmVolumeSlider, 'input', e => {
       bgmVolume = e.target.value / 100;
       safeText(bgmValText, `${e.target.value}%`);
-      if (bgmGainNode && isBgmEnabled && audioCtx) {
-        bgmGainNode.gain.setValueAtTime(bgmVolume * 0.15, audioCtx.currentTime);
+      if (bgmAudio) {
+        bgmAudio.volume = isBgmEnabled ? bgmVolume : 0;
       }
     });
 
@@ -749,14 +753,67 @@
     });
 
     // 3. Kết nối TikTok Live
-    safeOn(btnConnectTikTok, 'click', () => {
+    safeOn(btnConnectTikTok, 'click', async () => {
       const user = inputTikTokUser ? inputTikTokUser.value.trim() : '';
-      if (!user) return;
-      const streamTikTokName = document.getElementById('streamTikTokName');
-      safeText(streamTikTokName, user);
-      btnConnectTikTok.textContent = 'Đã Kết Nối';
-      btnConnectTikTok.style.background = '#27ae60';
-      showPrayerBubble(`📡 Đã kết nối kênh TikTok: ${user}`);
+      if (!user) {
+        alert('Vui lòng nhập tên kênh TikTok (Ví dụ: @motdoiannhien6788)');
+        return;
+      }
+
+      if (isTikTokConnected) {
+        // Đang kết nối -> Người dùng muốn ngắt kết nối
+        btnConnectTikTok.textContent = 'Đang ngắt...';
+        btnConnectTikTok.disabled = true;
+        try {
+          await fetch('/api/tiktok/disconnect', { method: 'POST' });
+          isTikTokConnected = false;
+          btnConnectTikTok.textContent = 'Kết Nối';
+          btnConnectTikTok.style.background = '';
+          btnConnectTikTok.disabled = false;
+          showPrayerBubble('Đã ngắt kết nối TikTok');
+        } catch (e) {
+          btnConnectTikTok.disabled = false;
+        }
+        return;
+      }
+
+      // Đang chưa kết nối -> Bắt đầu kết nối
+      btnConnectTikTok.textContent = 'Đang kết nối...';
+      btnConnectTikTok.disabled = true;
+      btnConnectTikTok.style.background = '#d35400';
+
+      try {
+        const res = await fetch('/api/tiktok/connect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: user })
+        });
+        const data = await res.json();
+        btnConnectTikTok.disabled = false;
+
+        if (data.success && data.status === 'connected') {
+          isTikTokConnected = true;
+          const cleanName = data.username.replace(/^@/, '');
+          btnConnectTikTok.textContent = 'Ngắt Kết Nối';
+          btnConnectTikTok.style.background = '#27ae60';
+          const streamTikTokName = document.getElementById('streamTikTokName');
+          safeText(streamTikTokName, `@${cleanName}`);
+          showPrayerBubble(`📡 Đã kết nối phòng Live: @${cleanName}`);
+        } else {
+          isTikTokConnected = false;
+          btnConnectTikTok.textContent = 'Thử Lại';
+          btnConnectTikTok.style.background = '#c0392b';
+          const errMsg = data.error || 'Không thể kết nối phòng Live';
+          showPrayerBubble(`⚠️ ${errMsg}`);
+          alert(`[Thông báo kết nối TikTok Live]:\n${errMsg}\n\nLưu ý: Kênh @${user} cần đang phát trực tiếp (Live) trên TikTok thì hệ thống mới lấy được bình luận và quà tặng.`);
+        }
+      } catch (err) {
+        isTikTokConnected = false;
+        btnConnectTikTok.disabled = false;
+        btnConnectTikTok.textContent = 'Thử Lại';
+        btnConnectTikTok.style.background = '#c0392b';
+        showPrayerBubble('⚠️ Lỗi mạng hoặc server không phản hồi');
+      }
     });
 
     safeOn(btnToggleSimulate, 'click', () => {
@@ -928,10 +985,33 @@
         break;
       case 'tiktok_status':
         const streamTikTokName = document.getElementById('streamTikTokName');
-        if (streamTikTokName && data.username) streamTikTokName.textContent = `@${data.username}`;
-        if (btnConnectTikTok) {
-          btnConnectTikTok.textContent = data.connected ? 'Đã Kết Nối' : 'Mất Kết Nối';
-          btnConnectTikTok.style.background = data.connected ? '#27ae60' : '#c0392b';
+        if (data.status === 'connected') {
+          isTikTokConnected = true;
+          if (streamTikTokName && data.username) streamTikTokName.textContent = `@${data.username}`;
+          if (btnConnectTikTok) {
+            btnConnectTikTok.textContent = 'Ngắt Kết Nối';
+            btnConnectTikTok.style.background = '#27ae60';
+            btnConnectTikTok.disabled = false;
+          }
+        } else if (data.status === 'connecting') {
+          if (btnConnectTikTok) {
+            btnConnectTikTok.textContent = 'Đang kết nối...';
+            btnConnectTikTok.style.background = '#d35400';
+            btnConnectTikTok.disabled = true;
+          }
+        } else {
+          isTikTokConnected = false;
+          if (btnConnectTikTok) {
+            btnConnectTikTok.textContent = 'Kết Nối';
+            btnConnectTikTok.style.background = '';
+            btnConnectTikTok.disabled = false;
+          }
+        }
+        break;
+      case 'tiktok_viewers':
+        const streamViewCount = document.getElementById('streamViewCount');
+        if (streamViewCount && data.viewerCount !== undefined) {
+          safeText(streamViewCount, Number(data.viewerCount).toLocaleString('vi-VN'));
         }
         break;
       default:

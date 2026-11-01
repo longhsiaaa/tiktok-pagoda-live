@@ -9,11 +9,17 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const http = require('http');
 const { WebSocketServer } = require('ws');
-const { WebcastPushConnection } = require('tiktok-live-connector');
-
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
+
+let TikTokLib = null;
+async function getTikTokLib() {
+  if (!TikTokLib) {
+    TikTokLib = await import('tiktok-live-connector');
+  }
+  return TikTokLib;
+}
 
 const PORT = process.env.PORT || 3000;
 const TIKTOK_USERNAME = process.env.TIKTOK_USERNAME || '';
@@ -124,6 +130,31 @@ app.get('/api/tts', async (req, res) => {
   } catch (err) {
     res.status(503).json({ error: 'VieNeu-TTS service not reachable' });
   }
+});
+
+// API: Kết nối TikTok Live theo tên kênh động (@username)
+app.post('/api/tiktok/connect', async (req, res) => {
+  const { username } = req.body || {};
+  if (!username) {
+    return res.status(400).json({ success: false, error: 'Vui lòng cung cấp tên kênh TikTok' });
+  }
+  try {
+    const st = await connectTikTok(username);
+    res.json({ success: true, ...st });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message || 'Không thể kết nối phòng Live' });
+  }
+});
+
+// API: Ngắt kết nối TikTok Live
+app.post('/api/tiktok/disconnect', async (req, res) => {
+  await disconnectTikTok();
+  res.json({ success: true, ...tiktokState });
+});
+
+// API: Kiểm tra trạng thái TikTok Live
+app.get('/api/tiktok/status', (req, res) => {
+  res.json(tiktokState);
 });
 
 // WebSocket Server
@@ -286,6 +317,20 @@ function handleClientAction(msg, defaultId, defaultName) {
 
     case 'so_read': // Kích hoạt xướng Sớ Cầu An bằng AI
       triggerSoReading();
+      break;
+
+    case 'connect_tiktok': // Kết nối TikTok Live từ Web/RPC
+      if (msg.username) {
+        connectTikTok(msg.username).catch(err => {
+          console.error('[RPC connect_tiktok]', err.message);
+        });
+      }
+      break;
+
+    case 'disconnect_tiktok': // Ngắt kết nối TikTok Live
+      disconnectTikTok().catch(err => {
+        console.error('[RPC disconnect_tiktok]', err.message);
+      });
       break;
 
     default:
@@ -453,117 +498,269 @@ if (SO_INTERVAL_MINUTES > 0) {
   }, SO_INTERVAL_MINUTES * 60 * 1000);
 }
 
-// TÍCH HỢP TIKTOK LIVE CONNECTOR
+// ============================================================================
+// TÍCH HỢP TIKTOK LIVE CONNECTOR (v2.5.0 - CHUẨN THỰC CHIẾN)
+// ============================================================================
 let tiktokLiveConnection = null;
+let tiktokState = {
+  status: 'idle', // idle, connecting, connected, disconnected, error
+  username: '',
+  error: '',
+  roomId: '',
+  viewerCount: 0
+};
 
-if (TIKTOK_USERNAME) {
-  console.log(`[TIKTOK] Đang kết nối tới kênh Live: @${TIKTOK_USERNAME}...`);
-  tiktokLiveConnection = new WebcastPushConnection(TIKTOK_USERNAME);
+// Hàm trích xuất thông tin người dùng từ sự kiện TikTok an toàn và đầy đủ
+function extractUserFromEvent(data) {
+  const u = data?.user || data?.userDetails || {};
+  const uniqueId = String(u?.uniqueId || data?.uniqueId || u?.userId || data?.userId || 'an_danh');
+  const name = String(u?.nickname || data?.nickname || u?.uniqueId || data?.uniqueId || 'Ẩn danh');
+  const avatar = u?.profilePicture?.url?.[0]
+    || u?.profilePicture?.urlList?.[0]
+    || u?.avatarThumb?.urlList?.[0]
+    || u?.avatarThumb?.url?.[0]
+    || u?.profilePictureUrl
+    || data?.profilePictureUrl
+    || '';
+  return { uniqueId, name, avatar };
+}
 
-  tiktokLiveConnection.connect().then(state => {
-    console.log(`[TIKTOK] Kết nối thành công tới phòng Live ID: ${state.roomId}`);
-    broadcast('tiktok_status', { connected: true, username: TIKTOK_USERNAME, roomId: state.roomId });
-  }).catch(err => {
-    console.error(`[TIKTOK] Lỗi kết nối: ${err.message}`);
-    broadcast('tiktok_status', { connected: false, error: err.message });
-  });
+// Hàm kết nối TikTok Live với username bất kỳ
+async function connectTikTok(uniqueId) {
+  const cleanUser = String(uniqueId || '')
+    .trim()
+    .replace(/^.*tiktok\.com\/@?/i, '')
+    .replace(/^@/, '')
+    .replace(/\/.*$/, '');
 
-  // Sự kiện: Viewer vào xem live
-  tiktokLiveConnection.on('member', data => {
-    const userId = `tt_${data.uniqueId}`;
-    const userName = data.nickname || data.uniqueId;
-    const avatar = data.profilePictureUrl || '';
+  if (!cleanUser) {
+    throw new Error('Tên tài khoản TikTok không hợp lệ');
+  }
 
-    let visitor = activeVisitors.get(userId);
-    if (!visitor) {
-      const seat = findEmptySeat();
-      visitor = {
-        id: userId,
-        name: userName,
-        avatar,
-        seatIndex: seat,
-        isVip: false,
-        totalGifts: 0,
-        joinedAt: Date.now()
-      };
-      activeVisitors.set(userId, visitor);
-      broadcast('visitor_join', visitor);
-    }
-  });
+  const { TikTokLiveConnection, ControlEvent, WebcastEvent } = await getTikTokLib();
+  if (!TikTokLiveConnection) {
+    throw new Error('Thư viện tiktok-live-connector chưa được cài đặt đúng');
+  }
 
-  // Sự kiện: Viewer bình luận
-  tiktokLiveConnection.on('chat', data => {
-    const userId = `tt_${data.uniqueId}`;
-    const userName = data.nickname || data.uniqueId;
-    handleChatEvent(userId, userName, data.comment);
-  });
+  await disconnectTikTok();
 
-  // Sự kiện: Viewer gửi quà tặng (Gift)
-  tiktokLiveConnection.on('gift', data => {
-    // Chỉ xử lý khi chuỗi combo kết thúc hoặc gift đơn lẻ
-    if (data.giftType === 1 && !data.repeatEnd) return;
+  tiktokState = {
+    status: 'connecting',
+    username: cleanUser,
+    error: '',
+    roomId: '',
+    viewerCount: 0
+  };
+  broadcast('tiktok_status', tiktokState);
+  console.log(`[TIKTOK] Bắt đầu kết nối tới phòng Live @${cleanUser}...`);
 
-    const userId = `tt_${data.uniqueId}`;
-    const userName = data.nickname || data.uniqueId;
-    const diamondCount = (data.diamondCount || 1) * (data.repeatCount || 1);
-    const giftName = data.giftName || 'Quà';
-
-    console.log(`[GIFT] ${userName} gửi quà ${giftName} (Giá trị: ${diamondCount} xu)`);
-
-    // Ghi nhận công đức
-    recordMerit(userId, userName, diamondCount, `Cúng dường ${giftName}`);
-
-    // Ánh xạ quà tặng sang nghi lễ Phật giáo
-    if (diamondCount >= 100) {
-      // 100+ coins: Đại Lễ Cúng Dường
-      broadcast('ceremony_great', {
-        userId,
-        name: userName,
-        giftName,
-        diamondCount,
-        text: `Đại lễ cúng dường: Thiện nam tín nữ ${userName} phát tâm cúng dường Tam Bảo!`
-      });
-      triggerSoReading();
-    } else if (diamondCount >= 30) {
-      // 30-99 coins: Dâng Mâm Ngũ Quả
-      broadcast('ceremony_fruit', {
-        userId,
-        name: userName,
-        giftName,
-        text: `Thiện tín ${userName} dâng mâm ngũ quả cúng dường Tam Bảo!`
-      });
-    } else if (diamondCount >= 10) {
-      // 10-29 coins: Lạy Phật Tam Bái
-      broadcast('ceremony_bow', {
-        userId,
-        name: userName,
-        bowCount: 3,
-        text: `Phật tử ${userName} chí tâm đảnh lễ Đức Thế Tôn tam bái!`
-      });
-    } else if (diamondCount >= 5) {
-      // 5-9 coins: Dâng Đóa Sen Hồng
-      broadcast('ceremony_lotus', {
-        userId,
-        name: userName,
-        text: `Phật tử ${userName} dâng đóa sen thanh khiết lên Tam Bảo!`
-      });
-    } else {
-      // 1-4 coins: Thắp Nén Nhang Trầm + Chuông
-      broadcast('ceremony_incense', {
-        userId,
-        name: userName,
-        sticks: 1,
-        text: `Thiện tín ${userName} thắp nén tâm hương cúng dường!`
-      });
-    }
-  });
-
-  // Sự kiện: Viewer thả tim
-  tiktokLiveConnection.on('like', data => {
-    broadcast('like_burst', {
-      likeCount: data.likeCount || 1,
-      name: data.nickname || 'Phật tử'
+  try {
+    const conn = new TikTokLiveConnection(cleanUser, {
+      processInitialData: false,
+      fetchRoomInfoOnConnect: false,
+      enableExtendedGiftInfo: false
     });
+
+    conn.on(ControlEvent.CONNECTED, state => {
+      tiktokState = {
+        status: 'connected',
+        username: cleanUser,
+        error: '',
+        roomId: state?.roomId || conn?.roomId || '',
+        viewerCount: tiktokState.viewerCount
+      };
+      broadcast('tiktok_status', tiktokState);
+      console.log(`[TIKTOK] ✅ Đã kết nối thành công phòng Live @${cleanUser} (Room ID: ${tiktokState.roomId})`);
+    });
+
+    conn.on(ControlEvent.DISCONNECTED, () => {
+      tiktokState = {
+        ...tiktokState,
+        status: 'disconnected',
+        error: 'Phòng Live đã ngắt kết nối'
+      };
+      broadcast('tiktok_status', tiktokState);
+      console.log(`[TIKTOK] ⚠️ Đã ngắt kết nối live @${cleanUser}`);
+    });
+
+    conn.on(ControlEvent.ERROR, err => {
+      const errMsg = String(err?.info || err?.message || err);
+      console.error(`[TIKTOK LỖI]: ${errMsg}`);
+      tiktokState.error = errMsg;
+      broadcast('tiktok_status', tiktokState);
+    });
+
+    // Sự kiện: Số lượng người đang xem Live
+    conn.on(WebcastEvent.ROOM_USER, data => {
+      const viewerCount = Number(data?.total ?? data?.viewerCount ?? 0);
+      if (viewerCount > 0) {
+        tiktokState.viewerCount = viewerCount;
+        broadcast('tiktok_viewers', { viewerCount });
+      }
+    });
+
+    // Sự kiện: Viewer vào xem live (Member join)
+    conn.on(WebcastEvent.MEMBER, data => {
+      const { uniqueId, name, avatar } = extractUserFromEvent(data);
+      const userId = `tt_${uniqueId}`;
+
+      let visitor = activeVisitors.get(userId);
+      if (!visitor) {
+        const seat = findEmptySeat();
+        visitor = {
+          id: userId,
+          name,
+          avatar,
+          seatIndex: seat,
+          isVip: false,
+          totalGifts: 0,
+          joinedAt: Date.now()
+        };
+        activeVisitors.set(userId, visitor);
+        broadcast('visitor_join', visitor);
+      }
+    });
+
+    // Sự kiện: Viewer bình luận (Chat)
+    conn.on(WebcastEvent.CHAT, data => {
+      const { uniqueId, name } = extractUserFromEvent(data);
+      const commentText = data?.comment || data?.content || '';
+      console.log(`[TIKTOK CHAT] ${name}: ${commentText}`);
+      handleChatEvent(`tt_${uniqueId}`, name, commentText);
+    });
+
+    // Sự kiện: Viewer thả tim (Like)
+    conn.on(WebcastEvent.LIKE, data => {
+      const { name } = extractUserFromEvent(data);
+      const likeCount = Math.min(20, Math.max(1, Number(data?.likeCount || data?.count || 1)));
+      broadcast('like_burst', {
+        likeCount,
+        name
+      });
+      broadcast('sound_woodblock', { userId: 'like', name, count: 1 });
+    });
+
+    // Sự kiện: Viewer gửi quà tặng (Gift)
+    conn.on(WebcastEvent.GIFT, data => {
+      const type = data.giftDetails?.giftType ?? data.extendedGiftInfo?.type ?? data.giftType;
+      // Nếu là combo streak (type = 1) mà chưa kết thúc streak, bỏ qua để chờ chốt tổng
+      if (type === 1 && !data.repeatEnd) return;
+
+      const { uniqueId, name, avatar } = extractUserFromEvent(data);
+      const userId = `tt_${uniqueId}`;
+      const giftName = data.giftDetails?.giftName || data.extendedGiftInfo?.name || data.giftName || 'Quà';
+      const diamonds = (data.giftDetails?.diamondCount ?? data.extendedGiftInfo?.diamond_count ?? data.diamondCount ?? 1) * (data.repeatCount || 1);
+
+      console.log(`[TIKTOK GIFT] 🎁 ${name} gửi ${giftName} x${data.repeatCount || 1} (Giá trị: ${diamonds} xu)`);
+
+      // Ghi nhận công đức
+      recordMerit(userId, name, diamonds, `Cúng dường ${giftName}`);
+
+      // Ánh xạ quà tặng theo giá trị xu TikTok vào các đại lễ Phật giáo
+      if (diamonds >= 100) {
+        // 100+ xu: Đại Lễ Kim Long Cúng Dường Tam Bảo
+        broadcast('ceremony_great', {
+          userId,
+          name,
+          giftName,
+          diamondCount: diamonds,
+          text: `Đại Lễ Kim Long: Thiện nam tín nữ ${name} phát tâm cúng dường Tam Bảo ${diamonds} xu!`
+        });
+        triggerSoReading();
+      } else if (diamonds >= 30) {
+        // 30-99 xu: Dâng Mâm Ngũ Quả
+        broadcast('ceremony_fruit', {
+          userId,
+          name,
+          giftName,
+          diamondCount: diamonds,
+          text: `Thiện tín ${name} dâng mâm ngũ quả tươi tốt cúng dường Tam Bảo!`
+        });
+      } else if (diamonds >= 10) {
+        // 10-29 xu: Lạy Phật Tam Bái
+        broadcast('ceremony_bow', {
+          userId,
+          name,
+          diamondCount: diamonds,
+          bowCount: 3,
+          text: `Phật tử ${name} chí tâm đảnh lễ Đức Thế Tôn tam bái!`
+        });
+      } else if (diamonds >= 5) {
+        // 5-9 xu: Dâng Đóa Sen Hồng
+        broadcast('ceremony_lotus', {
+          userId,
+          name,
+          diamondCount: diamonds,
+          color: 'pink',
+          text: `Phật tử ${name} dâng đóa sen thanh khiết lên Tam Bảo!`
+        });
+      } else {
+        // 1-4 xu: Thắp Nén Nhang Trầm
+        broadcast('ceremony_incense', {
+          userId,
+          name,
+          diamondCount: diamonds,
+          sticks: 1,
+          text: `Thiện tín ${name} thắp nén tâm hương cúng dường!`
+        });
+      }
+    });
+
+    const roomState = await conn.connect();
+    tiktokLiveConnection = conn;
+    tiktokState = {
+      status: 'connected',
+      username: cleanUser,
+      error: '',
+      roomId: roomState?.roomId || conn?.roomId || '',
+      viewerCount: tiktokState.viewerCount
+    };
+    broadcast('tiktok_status', tiktokState);
+    return tiktokState;
+
+  } catch (err) {
+    const errMsg = err.message || String(err);
+    console.error(`[TIKTOK KẾT NỐI THẤT BẠI]: ${errMsg}`);
+    let friendlyError = errMsg;
+    if (errMsg.includes('user_not_found') || errMsg.includes('19881007')) {
+      friendlyError = `Kênh @${cleanUser} hiện không phát LIVE hoặc chưa mở phòng Live.`;
+    } else if (errMsg.includes('offline') || errMsg.includes('LIVE has ended')) {
+      friendlyError = `Phiên Live của @${cleanUser} đã kết thúc hoặc đang ngoại tuyến.`;
+    }
+    tiktokState = {
+      status: 'error',
+      username: cleanUser,
+      error: friendlyError,
+      roomId: '',
+      viewerCount: 0
+    };
+    broadcast('tiktok_status', tiktokState);
+    throw new Error(friendlyError);
+  }
+}
+
+// Hàm ngắt kết nối TikTok Live
+async function disconnectTikTok() {
+  if (tiktokLiveConnection) {
+    try {
+      await tiktokLiveConnection.disconnect();
+    } catch (e) {}
+    tiktokLiveConnection = null;
+  }
+  tiktokState = {
+    status: 'disconnected',
+    username: '',
+    error: '',
+    roomId: '',
+    viewerCount: 0
+  };
+  broadcast('tiktok_status', tiktokState);
+}
+
+// Tự động kết nối nếu có cấu hình TIKTOK_USERNAME trong .env
+if (TIKTOK_USERNAME) {
+  connectTikTok(TIKTOK_USERNAME).catch(err => {
+    console.warn(`[TIKTOK AUTO-CONNECT] Không thể kết nối ban đầu tới @${TIKTOK_USERNAME}: ${err.message}`);
   });
 }
 

@@ -56,7 +56,12 @@ Màn hình livestream tích hợp sẵn bảng HUD sơn son thếp vàng rõ rà
 #### 2.4. 16 Quẻ Xăm May Mắn Quan Âm (Thuần Việt)
 Khi người xem bình luận `Xin que` hoặc bấm vào ống thẻ xăm, hệ thống sẽ lắc ống thẻ và hiển thị bảng quẻ xăm truyền thống: Số quẻ, Quẻ Thượng Thượng Cát / Trung Cát, Thơ quẻ 4 câu, Luận giải công danh - gia đạo - tài lộc và Lời khuyên tu tâm dưỡng tính.
 
-#### 2.5. Không Phụ Thuộc File MP3 Ngoại Vi (100% Web Audio API)
+#### 2.5. Nhạc Tụng Kinh Trì Chú Nền Thanh Tịnh & Hiệu Ứng Âm Thanh Chùa
+- **4 Bài Kinh & Thần Chú Nền Trì Liên Tục:**
+  1. 🪷 **Chú Đại Bi** (*Đại Bi Thần Chú Phạn Âm linh thiêng* - `chu_dai_bi.mp3`)
+  2. 🪵 **Niệm Phật A Di Đà** (*Tiếng niệm trầm hùng cùng tiếng gõ mõ khoan thai* - `niem_phat_a_di_da.mp3`)
+  3. 🕉️ **Chú Lục Tự Đại Minh** (*Om Mani Padme Hum* - `om_mani_padme_hum.mp3`)
+  4. 🌿 **Thần Chú Dược Sư** (*Bhaisajyaguru Mantra tiêu tai trừ chướng* - `chu_duoc_su.mp3`)
 - **Chuông Chùa Đại Hồng Chung:** Mô phỏng vật lý đa tần số với độ ngân dài 5.5 giây và vibrato tự nhiên.
 - **Mõ Gỗ Gia Trì:** Tổng hợp sóng tam giác kết hợp bộ lọc Bandpass 580Hz và tiếng gõ dùi gỗ đanh rỗng chuẩn xác.
 - **Tiếng Lắc Thẻ Xăm Tre:** Mô phỏng âm thanh thẻ tre va chạm rộn rã.
@@ -65,6 +70,10 @@ Khi người xem bình luận `Xin que` hoặc bấm vào ống thẻ xăm, hệ
 - Tích hợp mô hình AI chuyển văn bản thành giọng nói tiếng Việt tiên tiến **VieNeu-TTS v3 Turbo (48kHz)**.
 - Giọng đọc: **Nam Chuẩn Hà Nội (Thanh Bình)**, âm sắc trầm ấm, tự nhiên, từ tốn, uy nghiêm rất phù hợp cho việc xướng sớ cầu an, đọc lời khấn, ban quẻ xăm Quan Âm và tuyên dương công đức Tam Bảo.
 - Khởi động service cực nhanh qua: `npm run tts` (cổng 5050), tự động fallback sang Web Speech API nếu chạy ở chế độ web tĩnh standalone.
+
+#### 2.7. Kết Nối TikTok Live Connector v2.5.0 Động (Realtime RPC)
+- Hỗ trợ nhập tên bất kỳ phòng Live TikTok (ví dụ: `@motdoiannhien6788`) trực tiếp trên bảng điều khiển và bấm **Kết Nối** tức thì.
+- Bắt các sự kiện thời gian thực: Chat bình luận, Tặng quà (Gift combo), Thả tim (Like), Vào phòng xem (Join Member), Đếm số lượng mắt xem (Viewer count).
 
 ---
 

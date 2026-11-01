@@ -153,19 +153,30 @@
           </div>
 
           <button class="master-sound-btn" id="btnMasterSound">
-            🔔 Bật Âm Thanh Chùa & Giọng Đọc
+            🔔 Bật Âm Thanh Chùa & Nhạc Tụng Kinh
           </button>
 
           <div class="audio-toggle-row">
             <button class="toggle-pill active" id="btnToggleVoice">🎙️ Giọng VieNeu (Thanh Bình): BẬT</button>
-            <button class="toggle-pill active" id="btnToggleBgm">🎵 Nhạc Nền: BẬT</button>
+            <button class="toggle-pill active" id="btnToggleBgm">🪷 Nhạc Tụng Kinh: BẬT</button>
+          </div>
+
+          <!-- LỰA CHỌN BÀI KINH / BÀI CHÚ TRÌ LIÊN TỤC -->
+          <div class="bgm-selector-group">
+            <label class="selector-label" for="bgmTrackSelect">📜 Chọn bài Kinh / Chú Trì Nền:</label>
+            <select id="bgmTrackSelect" class="bgm-select-dropdown">
+              <option value="chu_dai_bi.mp3" selected>🪷 Chú Đại Bi (Đại Bi Thần Chú Phạn Âm)</option>
+              <option value="niem_phat_a_di_da.mp3">🪵 Niệm Phật A Di Đà (Gõ mõ khoan thai)</option>
+              <option value="om_mani_padme_hum.mp3">🕉️ Chú Lục Tự Đại Minh (Om Mani Padme Hum)</option>
+              <option value="chu_duoc_su.mp3">🌿 Thần Chú Dược Sư (Bhaisajyaguru Mantra)</option>
+            </select>
           </div>
 
           <div class="slider-control-group">
             <div class="slider-row">
-              <span class="slider-label">🎵 Âm lượng Nhạc nền</span>
-              <input type="range" id="bgmVolumeSlider" min="0" max="100" value="89">
-              <span class="slider-val" id="bgmValText">89%</span>
+              <span class="slider-label">🪷 Âm lượng Kinh nền</span>
+              <input type="range" id="bgmVolumeSlider" min="0" max="100" value="45">
+              <span class="slider-val" id="bgmValText">45%</span>
             </div>
             <div class="slider-row">
               <span class="slider-label">🎙️ Âm lượng Giọng đọc</span>
