@@ -321,25 +321,34 @@ body.studio-body {
   opacity: 0.35;
 }
 
-/* ĐÁM ĐÔNG PHẬT TỬ HAI BÊN */
+/* ĐÁM ĐÔNG ĐẠI ĐẠO TRÀNG PHẬT TỬ (SỨC CHỨA TỐI ĐA 800 NGƯỜI) */
 .congregation-grid {
   position: absolute;
-  top: 60%;
+  top: 52%;
+  bottom: 85px;
   left: 6px;
   right: 6px;
-  height: 27%;
   display: flex;
   justify-content: space-between;
   z-index: 6;
   pointer-events: none;
+  overflow: hidden;
 }
 
 .congregation-side {
-  width: 40%;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px 4px;
-  align-content: start;
+  width: 42%;
+  height: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 5px 3px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-bottom: 25px;
+}
+
+.congregation-side::-webkit-scrollbar {
+  display: none;
 }
 
 .pilgrim-figure-slot {
@@ -347,6 +356,80 @@ body.studio-body {
   flex-direction: column;
   align-items: center;
   position: relative;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.pilgrim-figure-slot.fade-in {
+  animation: devoteeSlotFadeIn 0.5s ease forwards;
+}
+
+.pilgrim-figure-slot.fade-out {
+  animation: devoteeSlotFadeOut 0.5s ease forwards;
+}
+
+@keyframes devoteeSlotFadeIn {
+  from { opacity: 0; transform: scale(0.7) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes devoteeSlotFadeOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.6) translateY(-8px); }
+}
+
+/* HUY HIỆU AVATAR TIKTOKER TRÊN ĐẦU PHẬT TỬ */
+.devotee-avatar-badge {
+  position: absolute;
+  top: -5px;
+  right: -2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid var(--color-gold);
+  background: #331508;
+  overflow: hidden;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.85);
+}
+
+.devotee-avatar-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* THUỘC TÍNH NFT TRANG PHỤC ĐI LỄ CHÙA ĐỘC BẢN */
+.nft-outfit-lam_truyen_thong {
+  /* Áo Lam Cư Sĩ Truyền Thống */
+  filter: drop-shadow(0 3px 5px rgba(0,0,0,0.85));
+}
+.nft-outfit-nau_song {
+  /* Áo Nâu Sồng Nhà Thiền (Đất trầm thanh tịnh) */
+  filter: sepia(0.85) hue-rotate(-25deg) brightness(0.88) contrast(1.1) drop-shadow(0 3px 5px rgba(0,0,0,0.85));
+}
+.nft-outfit-ngoc_bich {
+  /* Áo Lam Ngọc Bích (Thanh khiết thoát tục) */
+  filter: hue-rotate(42deg) saturate(1.35) brightness(1.05) drop-shadow(0 3px 5px rgba(0,0,0,0.85));
+}
+.nft-outfit-vang_sa_mon {
+  /* Áo Tràng Sa Môn (Vàng nghệ trang nghiêm) */
+  filter: sepia(0.55) hue-rotate(-52deg) saturate(2.3) brightness(1.12) drop-shadow(0 3px 5px rgba(0,0,0,0.85));
+}
+.nft-outfit-trang_tinh_do {
+  /* Bạch Y Tịnh Độ (Trắng viền sen) */
+  filter: grayscale(0.82) brightness(1.38) contrast(1.15) drop-shadow(0 3px 5px rgba(0,0,0,0.85));
+}
+.nft-outfit-xam_khoi {
+  /* Áo Cư Sĩ Xám Khói (Vô vi tịch tĩnh) */
+  filter: grayscale(0.75) brightness(0.92) contrast(1.05) drop-shadow(0 3px 5px rgba(0,0,0,0.85));
+}
+.nft-outfit-hoang_kim {
+  /* Gấm Vàng Hoàng Kim (Thí chủ cúng dường / VIP) */
+  filter: sepia(0.65) hue-rotate(-42deg) saturate(2.5) brightness(1.22) drop-shadow(0 0 6px rgba(255, 215, 0, 0.8));
 }
 
 .regular-figure {
@@ -417,16 +500,19 @@ body.studio-body {
 
 .prayer-pop-bubble {
   position: absolute;
-  background: linear-gradient(135deg, rgba(28, 12, 6, 0.94), rgba(16, 6, 3, 0.96));
+  background: linear-gradient(135deg, rgba(28, 12, 6, 0.96), rgba(16, 6, 3, 0.98));
   border: 1.5px solid var(--color-gold);
   color: #fff;
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
-  padding: 5px 10px;
-  border-radius: 12px;
+  padding: 4px 8px;
+  border-radius: 10px;
   white-space: nowrap;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.9), 0 0 10px rgba(255, 215, 0, 0.35);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.92), 0 0 10px rgba(255, 215, 0, 0.4);
   animation: bubblePopFade 4.5s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  z-index: 60;
+  pointer-events: none;
+  transform: translate3d(-50%, -100%, 0);
 }
 
 .prayer-pop-bubble::after {

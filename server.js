@@ -37,8 +37,8 @@ const DHARMA_NAMES = [
 
 // Danh sách thí chủ đã dâng hương, cúng dường (dùng cho Sớ Cầu An & Sổ Công Đức)
 const meritBook = new Map(); // key: id/username/ip, value: { name, avatar, gifts, totalDiamonds, intent, timestamp }
-const activeVisitors = new Map(); // Quản lý bồ đoàn hiện thời (tối đa 48 chỗ)
-const MAX_CUSHIONS = 48;
+const activeVisitors = new Map(); // Quản lý bồ đoàn hiện thời (tối đa 800 chỗ theo cơ chế FIFO)
+const MAX_CUSHIONS = 800; // Sức chứa Đại Đạo Tràng tối đa 800 Phật tử thật
 
 // Dữ liệu phiên Live thực tế (tích lũy thời gian thực từ TikTok Live)
 const sessionStats = {
@@ -716,15 +716,16 @@ async function connectTikTok(uniqueId) {
 
     // Sự kiện: Viewer thả tim (Like)
     conn.on(WebcastEvent.LIKE, data => {
-      const { name, avatar } = extractUserFromEvent(data);
+      const { uniqueId, name, avatar } = extractUserFromEvent(data);
       const likeCount = Math.min(20, Math.max(1, Number(data?.likeCount || data?.count || 1)));
       sessionStats.woodblockHits += 1;
       broadcast('like_burst', {
+        userId: `tt_${uniqueId}`,
         likeCount,
         name,
         avatar
       });
-      broadcast('sound_woodblock', { userId: 'like', name, avatar, count: 1 });
+      broadcast('sound_woodblock', { userId: `tt_${uniqueId}`, name, avatar, count: 1 });
       broadcastStatsSync();
     });
 

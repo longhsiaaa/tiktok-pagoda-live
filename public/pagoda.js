@@ -41,7 +41,7 @@
   let totalCoins = 13948;
 
   let ws = null;
-  let isSimulating = true;
+  let isSimulating = false;
   let speechBubbleId = 0;
   let currentTtsAudio = null;
   let currentTtsUrl = null;
@@ -430,85 +430,209 @@
     }
   }
 
-  const REGULAR_NAMES = [
-    'Diệu Thảo', 'Thích ăn thịt', 'MSH/JWIN', 'Lan\'slan', 'Đức Tâm', 'Từ Như',
-    'Thích Bất Trộm', 'Đồng Nô', 'Thích Chè Chè', 'Hương Sóc Sơn', 'Tuyết Lâm',
-    'Thích Thông C', 'Thiện Minh', 'Thích Tu Hành', 'Hìn', 'Tóc Dài Thơ Ngây',
-    'Thích Chị Sếp', 'Thích Đủ Thứ', 'An Nhân', 'Thích Cúng Dường', 'Tâm Hoa',
-    'KHÁNH CM', 'Light Blue', 'Thích Coi Xoong', 'Bear A', 'Thích Thì Chiều'
+  // ========================================================
+  // 2. HỆ THỐNG PHẬT TỬ THẬT & ĐẶC TÍNH NFT TRANG PHỤC ĐỘC BẢN
+  // SỨC CHỨA TỐI ĐA 800 NGƯỜI (CƠ CHẾ HÀNG ĐỢI FIFO)
+  // ========================================================
+  const NFT_OUTFITS = [
+    { id: 'lam_truyen_thong', name: 'Áo Lam Cư Sĩ', cls: 'nft-outfit-lam_truyen_thong', badge: '🪷' },
+    { id: 'nau_song', name: 'Áo Nâu Sồng', cls: 'nft-outfit-nau_song', badge: '🪵' },
+    { id: 'ngoc_bich', name: 'Áo Lam Ngọc Bích', cls: 'nft-outfit-ngoc_bich', badge: '💎' },
+    { id: 'vang_sa_mon', name: 'Áo Tràng Sa Môn', cls: 'nft-outfit-vang_sa_mon', badge: '📿' },
+    { id: 'trang_tinh_do', name: 'Bạch Y Tịnh Độ', cls: 'nft-outfit-trang_tinh_do', badge: '✨' },
+    { id: 'xam_khoi', name: 'Áo Thiền Xám Khói', cls: 'nft-outfit-xam_khoi', badge: '☁️' },
+    { id: 'hoang_kim', name: 'Gấm Vàng Hoàng Kim', cls: 'nft-outfit-hoang_kim', badge: '👑' }
   ];
+
+  const NFT_ACCESSORIES = [
+    { name: 'Tràng hạt 108', icon: '📿' },
+    { name: 'Vòng bồ đề đỏ', icon: '🔴' },
+    { name: 'Khăn lam sen', icon: '🧣' },
+    { name: 'Đóa sen hồng', icon: '🌸' },
+    { name: 'Hào quang tịnh', icon: '💫' }
+  ];
+
+  function hashString(str) {
+    let hash = 0;
+    if (!str) return 0;
+    const s = String(str);
+    for (let i = 0; i < s.length; i++) {
+      hash = ((hash << 5) - hash) + s.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
+
+  function generateDevoteeTraits(uniqueKey) {
+    const hash = hashString(uniqueKey || 'phat_tu');
+    const gender = (hash % 2 === 0) ? 'Nữ' : 'Nam';
+    const outfit = NFT_OUTFITS[hash % NFT_OUTFITS.length];
+    const accessory = NFT_ACCESSORIES[(hash >> 3) % NFT_ACCESSORIES.length];
+    return {
+      gender,
+      outfit,
+      accessory,
+      rankTitle: `Cấp ${(hash % 5) + 1}`
+    };
+  }
+
+  const MAX_DISPLAY_DEVOTEES = 800; // Tối đa 800 Phật tử thật
+  const realDevoteeMap = new Map(); // key: cleanUserId -> DevoteeObj
+  const realDevoteeOrder = []; // FIFO array: Người vào trước sẽ tạm ẩn cho người vào sau nếu > 800
+  let sideToggle = false;
+
+  let leftSideContainer = null;
+  let rightSideContainer = null;
 
   function renderCongregation() {
     if (!congregationGrid) return;
     congregationGrid.innerHTML = '';
 
-    // Cột bên trái (3 cột x 5 hàng = 15 Phật tử)
-    const leftSide = document.createElement('div');
-    leftSide.className = 'congregation-side side-left';
-    for (let i = 0; i < 15; i++) {
-      const name = REGULAR_NAMES[i % REGULAR_NAMES.length];
-      const slot = document.createElement('div');
-      slot.className = 'pilgrim-figure-slot';
-      slot.id = `pilgrim-l-${i}`;
-      const delay = (Math.random() * 3.5).toFixed(2);
-      const dur = (3.0 + Math.random() * 1.2).toFixed(2);
-      const breatheHeight = (-(1.2 + Math.random() * 0.8)).toFixed(1);
-      slot.innerHTML = `
-        <img class="congregation-devotee-sprite" id="congregation-devotee-l-${i}" src="${SPRITE_FRAMES.kneel}" alt="Phật tử" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px" />
-        <div class="regular-cushion"></div>
-        <span class="regular-name-tag">${escapeHtml(name)}</span>
-      `;
-      leftSide.appendChild(slot);
+    leftSideContainer = document.createElement('div');
+    leftSideContainer.className = 'congregation-side side-left';
+    leftSideContainer.id = 'congregationSideLeft';
+
+    rightSideContainer = document.createElement('div');
+    rightSideContainer.className = 'congregation-side side-right';
+    rightSideContainer.id = 'congregationSideRight';
+
+    congregationGrid.appendChild(leftSideContainer);
+    congregationGrid.appendChild(rightSideContainer);
+
+    // Không sinh phật tử giả. Sân khấu sẵn sàng chào đón các Phật tử thật khi kết nối!
+  }
+
+  /**
+   * Đăng ký hoặc lấy vị trí bồ đoàn của Phật tử THẬT trên đạo tràng
+   * Áp dụng NFT Trait Generator & Hàng đợi FIFO tối đa 800 người
+   */
+  function getOrCreateRealDevotee(userId, name, avatar = '') {
+    if (!userId) userId = name || 'an_danh';
+    const cleanId = String(userId).trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    if (realDevoteeMap.has(cleanId)) {
+      const existing = realDevoteeMap.get(cleanId);
+      existing.lastActive = Date.now();
+      if (name && existing.name !== name) {
+        existing.name = name;
+        const nameEl = document.querySelector(`#${existing.slotId} .user-display-name`);
+        if (nameEl) nameEl.textContent = name;
+      }
+      if (avatar && !existing.avatar) {
+        existing.avatar = avatar;
+        const avatarEl = document.querySelector(`#${existing.slotId} .devotee-avatar-badge img`);
+        if (avatarEl) avatarEl.src = avatar;
+      }
+      return existing;
     }
 
-    // Cột bên phải (3 cột x 5 hàng = 15 Phật tử)
-    const rightSide = document.createElement('div');
-    rightSide.className = 'congregation-side side-right';
-    for (let i = 15; i < 30; i++) {
-      const name = REGULAR_NAMES[i % REGULAR_NAMES.length];
-      const slot = document.createElement('div');
-      slot.className = 'pilgrim-figure-slot';
-      slot.id = `pilgrim-r-${i}`;
-      const delay = (Math.random() * 3.5).toFixed(2);
-      const dur = (3.0 + Math.random() * 1.2).toFixed(2);
-      const breatheHeight = (-(1.2 + Math.random() * 0.8)).toFixed(1);
-      slot.innerHTML = `
-        <img class="congregation-devotee-sprite" id="congregation-devotee-r-${i}" src="${SPRITE_FRAMES.kneel}" alt="Phật tử" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px" />
-        <div class="regular-cushion"></div>
-        <span class="regular-name-tag">${escapeHtml(name)}</span>
-      `;
-      rightSide.appendChild(slot);
+    // Nếu đã chạm mốc 800 Phật tử: Gỡ người vào trước nhất ra khỏi sân khấu (FIFO)
+    if (realDevoteeOrder.length >= MAX_DISPLAY_DEVOTEES) {
+      const oldestId = realDevoteeOrder.shift();
+      const oldestDevotee = realDevoteeMap.get(oldestId);
+      if (oldestDevotee) {
+        const oldEl = document.getElementById(oldestDevotee.slotId);
+        if (oldEl) {
+          oldEl.classList.add('fade-out');
+          setTimeout(() => { if (oldEl.parentNode) oldEl.remove(); }, 400);
+        }
+        realDevoteeMap.delete(oldestId);
+      }
     }
 
-    congregationGrid.appendChild(leftSide);
-    congregationGrid.appendChild(rightSide);
+    if (!leftSideContainer || !rightSideContainer) {
+      renderCongregation();
+    }
+
+    const traits = generateDevoteeTraits(cleanId);
+    const slotId = `devotee-slot-${cleanId}`;
+    const targetSide = sideToggle ? rightSideContainer : leftSideContainer;
+    sideToggle = !sideToggle;
+
+    const delay = (Math.random() * 3.5).toFixed(2);
+    const dur = (3.0 + Math.random() * 1.2).toFixed(2);
+    const breatheHeight = (-(1.2 + Math.random() * 0.8)).toFixed(1);
+
+    const slot = document.createElement('div');
+    slot.className = 'pilgrim-figure-slot fade-in';
+    slot.id = slotId;
+    slot.setAttribute('data-userid', cleanId);
+
+    const avatarMarkup = avatar 
+      ? `<div class="devotee-avatar-badge" title="${escapeHtml(name)}"><img src="${escapeHtml(avatar)}" onerror="this.parentNode.innerHTML='${traits.accessory.icon}'" alt="" /></div>`
+      : `<div class="devotee-avatar-badge" title="${escapeHtml(name)}">${traits.accessory.icon}</div>`;
+
+    slot.innerHTML = `
+      ${avatarMarkup}
+      <img class="congregation-devotee-sprite ${traits.outfit.cls}" src="${SPRITE_FRAMES.kneel}" alt="${escapeHtml(name)}" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px" />
+      <div class="regular-cushion"></div>
+      <span class="regular-name-tag nft-name-tag" title="${escapeHtml(name)} (${traits.outfit.name})">
+        <span class="nft-accessory-icon">${traits.outfit.badge}</span>
+        <span class="user-display-name">${escapeHtml(name)}</span>
+      </span>
+    `;
+
+    targetSide.appendChild(slot);
+
+    const devotee = {
+      userId: cleanId,
+      name: name || 'Phật tử',
+      avatar,
+      traits,
+      slotId,
+      element: slot,
+      joinedAt: Date.now(),
+      lastActive: Date.now()
+    };
+
+    realDevoteeMap.set(cleanId, devotee);
+    realDevoteeOrder.push(cleanId);
+
+    return devotee;
   }
 
   // ========================================================
-  // 3. HIỂN THỊ BONG BÓNG LỜI KHẤN THỜI GIAN THỰC (XSS SAFE)
+  // 3. HIỂN THỊ BONG BÓNG LỜI KHẤN THỜI GIAN THỰC (NEO CHÍNH XÁC VÀO ĐẦU PHẬT TỬ)
   // ========================================================
-  function showPrayerBubble(text, seatElement, avatar = '', sender = '') {
+  function showPrayerBubble(text, seatElement, avatar = '', sender = '', userId = '') {
     if (!streamFrame || !streamSpeechLayer || !text) return;
 
+    // Định vị chính xác chỗ ngồi của Phật tử nếu chưa được chỉ định
     if (!seatElement) {
-      // Ưu tiên hiển thị trên Tín Đồ Trung Tâm nếu đang ở trên thảm đỏ
-      const centralWorshipper = document.getElementById('centralWorshipper');
-      if (centralWorshipper && Math.random() < 0.4) {
-        seatElement = centralWorshipper;
-      } else {
-        const allSlots = document.querySelectorAll('.pilgrim-figure-slot, .vip-seat-slot');
-        if (allSlots.length > 0) {
-          seatElement = allSlots[Math.floor(Math.random() * allSlots.length)];
+      if (userId || sender) {
+        const devotee = getOrCreateRealDevotee(userId || sender, sender || 'Phật tử', avatar);
+        if (devotee && devotee.slotId) {
+          seatElement = document.getElementById(devotee.slotId);
+        }
+      }
+
+      // Fallback nếu không xác định được người cụ thể
+      if (!seatElement) {
+        const centralWorshipper = document.getElementById('centralWorshipper');
+        if (centralWorshipper && Math.random() < 0.3) {
+          seatElement = centralWorshipper;
+        } else {
+          const allSlots = document.querySelectorAll('.pilgrim-figure-slot, .vip-seat-slot');
+          if (allSlots.length > 0) {
+            seatElement = allSlots[Math.floor(Math.random() * allSlots.length)];
+          }
         }
       }
     }
     if (!seatElement) return;
 
+    // Kích hoạt Phật tử này cúi đầu niệm Phật cùng lúc khi chat
+    const spriteImg = seatElement.querySelector('.congregation-devotee-sprite');
+    if (spriteImg) {
+      bowDevotee(spriteImg, 0, false);
+    }
+
     const rect = seatElement.getBoundingClientRect();
     const frameRect = streamFrame.getBoundingClientRect();
 
-    const posX = Math.max(70, Math.min(frameRect.width - 70, rect.left - frameRect.left + rect.width / 2));
-    const posY = Math.max(30, rect.top - frameRect.top - 12);
+    // Neo chính giữa đỉnh đầu của bồ đoàn / Phật tử đó
+    const posX = Math.max(75, Math.min(frameRect.width - 75, rect.left - frameRect.left + rect.width / 2));
+    const posY = Math.max(25, rect.top - frameRect.top - 10);
 
     const bubble = document.createElement('div');
     bubble.className = 'prayer-pop-bubble';
@@ -1258,16 +1382,21 @@
         }
         break;
       case 'visitor_join':
-        showPrayerBubble('Vừa bước vào Chánh Điện trang nghiêm 🙏', null, data.avatar, data.name || data.dharmaName || 'Đồng tu');
+        const visitorDevotee = getOrCreateRealDevotee(data.id || data.userId || data.name, data.name || data.dharmaName || 'Đồng tu', data.avatar);
+        const visitorSlot = document.getElementById(visitorDevotee.slotId);
+        showPrayerBubble('Vừa bước vào Chánh Điện trang nghiêm 🙏', visitorSlot, data.avatar, visitorDevotee.name, visitorDevotee.userId);
         triggerCongregationWave();
         break;
       case 'ceremony_incense':
-        triggerIncenseAction(data.userName || data.name || 'Phật tử', data.intent || data.prayer || data.text, data.diamondCount || 1, data.avatar || '');
+        const incDevotee = getOrCreateRealDevotee(data.userId || data.userName || data.name, data.userName || data.name || 'Phật tử', data.avatar);
+        triggerIncenseAction(incDevotee.name, data.intent || data.prayer || data.text, data.diamondCount || 1, data.avatar || '');
         break;
       case 'ceremony_bow':
         triggerWoodblockAction(data.name || 'Phật tử', data.bowCount || 3, data.avatar || '');
         recordDonation(data.name || 'Phật tử', data.diamondCount || 5);
-        showPrayerBubble('Chí tâm đảnh lễ Đức Thế Tôn tam bái 🙏', null, data.avatar, data.name || 'Phật tử');
+        const bowDevoteeObj = getOrCreateRealDevotee(data.userId || data.name, data.name || 'Phật tử', data.avatar);
+        const bowSlot = document.getElementById(bowDevoteeObj.slotId);
+        showPrayerBubble('Chí tâm đảnh lễ Đức Thế Tôn tam bái 🙏', bowSlot, data.avatar, bowDevoteeObj.name, bowDevoteeObj.userId);
         animateWalkerOnCarpet(data.name || 'Phật tử', data.avatar || '', '🙏 Lạy Phật Tam Bái', 'Chí tâm sám hối đảnh lễ Tam Bảo');
         break;
       case 'sound_woodblock':
@@ -1289,15 +1418,21 @@
         break;
       case 'like_burst':
         triggerCongregationWave();
-        if (Math.random() < 0.3) {
-          showPrayerBubble('Đã thả tim niệm Phật ❤️', null, data.avatar, data.name || 'Phật tử');
+        if (data.userId || data.name) {
+          const likeDevotee = getOrCreateRealDevotee(data.userId || data.name, data.name || 'Phật tử', data.avatar);
+          const likeSlot = document.getElementById(likeDevotee.slotId);
+          if (Math.random() < 0.35) {
+            showPrayerBubble('Đã thả tim niệm Phật ❤️🙏', likeSlot, data.avatar, likeDevotee.name, likeDevotee.userId);
+          }
         }
         break;
       case 'divination_result':
         if (data.fortune) {
           const f = data.fortune;
           safeText(marqueeText, `🎋 ${data.name || 'Phật tử'} nhận Quẻ số ${f.number || '01'} - ${f.title || ''}`);
-          showPrayerBubble(`Rút Quẻ số ${f.number || '01'}: ${f.title}`, null, data.avatar, data.name || 'Phật tử');
+          const divDevotee = getOrCreateRealDevotee(data.userId || data.name, data.name || 'Phật tử', data.avatar);
+          const divSlot = document.getElementById(divDevotee.slotId);
+          showPrayerBubble(`Rút Quẻ số ${f.number || '01'}: ${f.title}`, divSlot, data.avatar, divDevotee.name, divDevotee.userId);
           animateWalkerOnCarpet(data.name || 'Phật tử', data.avatar || '', `🎋 Rút Quẻ số ${f.number || '01'}`, f.meaning);
           setTimeout(() => {
             safeText(fortuneNum, `QUẺ SỐ ${f.number < 10 ? '0' + f.number : f.number}`);
@@ -1318,7 +1453,11 @@
         break;
       case 'chat_message':
         const chatText = data.text || data.comment || '';
-        if (chatText) showPrayerBubble(chatText, null, data.avatar, data.name || 'Phật tử');
+        if (chatText) {
+          const chatDevotee = getOrCreateRealDevotee(data.userId || data.name, data.name || 'Phật tử', data.avatar);
+          const chatSlot = document.getElementById(chatDevotee.slotId);
+          showPrayerBubble(chatText, chatSlot, data.avatar, chatDevotee.name, chatDevotee.userId);
+        }
         break;
       case 'tiktok_status':
         const streamTikTokName = document.getElementById('streamTikTokName');
