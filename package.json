@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js --simulate"
+    "dev": "node server.js --simulate",
+    "tts": "python tts_server.py"
   },
   "keywords": [
     "tiktok-live",

@@ -57,7 +57,7 @@
             </div>
             <div class="merit-mini-board">
               <div class="board-title">TẤM LÒNG THÀNH</div>
-              <ul class="board-donor-list">
+              <ul class="board-donor-list" id="boardDonorList">
                 <li><span class="rank">①</span> <span class="d-name">Tiến Trương</span> <span class="d-coins">5.043</span></li>
                 <li><span class="rank">②</span> <span class="d-name">Anh Thơ 1227</span> <span class="d-coins">833</span></li>
                 <li><span class="rank">③</span> <span class="d-name">tao nồng ảnh...</span> <span class="d-coins">550</span></li>
@@ -86,7 +86,7 @@
           <div class="section-title">🔊 ÂM THANH CHÙA & GIỌNG ĐỌC KHẤN</div>
           <button class="master-sound-btn" id="btnMasterSound">🔔 Bật Âm Thanh Chùa & Giọng Đọc</button>
           <div class="audio-toggle-row">
-            <button class="toggle-pill active" id="btnToggleVoice">🎙️ Giọng Đọc: BẬT</button>
+            <button class="toggle-pill active" id="btnToggleVoice">🎙️ Giọng VieNeu (Thanh Bình): BẬT</button>
             <button class="toggle-pill active" id="btnToggleBgm">🎵 Nhạc Nền: BẬT</button>
           </div>
           <div class="slider-control-group">
@@ -101,6 +101,19 @@
               <span class="slider-val" id="voiceValText">86%</span>
             </div>
           </div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title">
+            <span>📡 KẾT NỐI PHÒNG TIKTOK LIVE</span>
+          </div>
+          <div class="tiktok-connect-box">
+            <input type="text" id="inputTikTokUser" value="@zenfacts_vn" placeholder="@kenh_tiktok_cua_ban">
+            <button class="connect-btn" id="btnConnectTikTok">Kết Nối</button>
+          </div>
+          <button class="sim-toggle-btn active" id="btnToggleSimulate">
+            📺 Tự động Giả lập Người Xem: BẬT
+          </button>
         </section>
 
         <section class="panel-section">
@@ -132,6 +145,7 @@
     <div class="modal-card">
       <div style="text-align:right"><button id="closeFortuneBtn" style="background:none;border:none;font-size:18px;cursor:pointer">✕</button></div>
       <div style="text-align:center;font-size:10px;font-weight:bold;color:#8c531b">LỜI PHẬT BÀ QUAN ÂM BAN PHƯỚC</div>
+      <h3 class="card-fortune-num" id="fortuneNum" style="text-align:center;font-size:13px;color:#c0392b;margin:4px 0 2px">QUẺ SỐ 01</h3>
       <h2 class="card-fortune-title" id="fortuneTitle">QUẺ SỐ 01: THƯỢNG THƯỢNG CÁT</h2>
       <div class="poem-block" id="fortunePoem">Đầu xuân mưa thuận gió êm đềm,<br>Trời ban phúc lộc đến thềm nhà xưa.</div>
       <div style="font-size:12px;margin-bottom:6px"><strong>📖 Luận Giải:</strong> <span id="fortuneMeaning">Cầu tài đại cát, gia đạo an khang. Mọi mong ước nay sắp thành hiện thực.</span></div>

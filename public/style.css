@@ -243,7 +243,8 @@ body.studio-body {
   background-position: center;
   margin-bottom: -10px;
   z-index: 2;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.7));
+  mix-blend-mode: multiply;
+  filter: contrast(1.15) brightness(0.95) drop-shadow(0 4px 6px rgba(0,0,0,0.7));
   border-radius: 16px 16px 0 0;
 }
 
@@ -335,7 +336,8 @@ body.studio-body {
   background-image: url('assets/pilgrim_sprite.jpg');
   background-size: cover;
   background-position: center;
-  filter: drop-shadow(0 3px 5px rgba(0,0,0,0.8));
+  mix-blend-mode: multiply;
+  filter: contrast(1.15) brightness(0.95) drop-shadow(0 3px 5px rgba(0,0,0,0.8));
   border-radius: 12px 12px 0 0;
   animation: pilgrimBreathe 3.5s ease-in-out infinite;
 }

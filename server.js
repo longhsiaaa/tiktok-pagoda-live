@@ -4,10 +4,10 @@
  * Hỗ trợ: TikTok Live Connector + OBS Overlay + Web Local Mode (IP Viewer Identification)
  */
 
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const http = require('http');
-const path = require('path');
 const { WebSocketServer } = require('ws');
 const { WebcastPushConnection } = require('tiktok-live-connector');
 
@@ -103,6 +103,27 @@ app.get('/api/prayer-list', (req, res) => {
       diamonds: m.totalDiamonds
     }));
   res.json({ prayers });
+});
+
+// API: VieNeu-TTS AI Voice Proxy (Giọng Nam Chuẩn Thanh Bình 48kHz)
+app.get('/api/tts', async (req, res) => {
+  const text = req.query.text;
+  if (!text) return res.status(400).json({ error: 'Missing text parameter' });
+  try {
+    const ttsUrl = `http://127.0.0.1:5050/tts?text=${encodeURIComponent(text)}&voice=Thanh%20B%C3%ACnh`;
+    const response = await fetch(ttsUrl);
+    if (!response.ok) {
+      return res.status(response.status).json({ error: 'VieNeu-TTS server error' });
+    }
+    const arrayBuf = await response.arrayBuffer();
+    res.set({
+      'Content-Type': 'audio/wav',
+      'Cache-Control': 'public, max-age=3600'
+    });
+    res.send(Buffer.from(arrayBuf));
+  } catch (err) {
+    res.status(503).json({ error: 'VieNeu-TTS service not reachable' });
+  }
 });
 
 // WebSocket Server

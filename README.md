@@ -61,15 +61,23 @@ Khi người xem bình luận `Xin que` hoặc bấm vào ống thẻ xăm, hệ
 - **Mõ Gỗ Gia Trì:** Tổng hợp sóng tam giác kết hợp bộ lọc Bandpass 580Hz và tiếng gõ dùi gỗ đanh rỗng chuẩn xác.
 - **Tiếng Lắc Thẻ Xăm Tre:** Mô phỏng âm thanh thẻ tre va chạm rộn rã.
 
+#### 2.6. Giọng Đọc AI Cao Cấp: VieNeu-TTS Nam Chuẩn (Thanh Bình)
+- Tích hợp mô hình AI chuyển văn bản thành giọng nói tiếng Việt tiên tiến **VieNeu-TTS v3 Turbo (48kHz)**.
+- Giọng đọc: **Nam Chuẩn Hà Nội (Thanh Bình)**, âm sắc trầm ấm, tự nhiên, từ tốn, uy nghiêm rất phù hợp cho việc xướng sớ cầu an, đọc lời khấn, ban quẻ xăm Quan Âm và tuyên dương công đức Tam Bảo.
+- Khởi động service cực nhanh qua: `npm run tts` (cổng 5050), tự động fallback sang Web Speech API nếu chạy ở chế độ web tĩnh standalone.
+
 ---
 
 ### 3. Hướng Dẫn Cài Đặt & Sử Dụng
 
-#### Bước 1: Tải Mã Nguồn
+#### Bước 1: Tải Mã Nguồn & Cài Đặt
 ```bash
 git clone https://github.com/longhsiaaa/tiktok-pagoda-live.git
 cd tiktok-pagoda-live
 npm install
+
+# Cài đặt thư viện Python cho giọng đọc AI VieNeu-TTS (Tùy chọn)
+pip install -r requirements.txt
 ```
 
 #### Bước 2: Cấu Hình
@@ -173,6 +181,7 @@ tiktok-pagoda-live/
 │   ├── bai-viet-longnh.html# Định dạng HTML sẵn sàng đăng WordPress
 │   └── demo-chua.html      # Bản demo HTML độc lập chạy không cần server
 ├── .env.example            # Mẫu file biến môi trường
+├── tts_server.py           # VieNeu-TTS AI Voice Server (Giọng Thanh Bình 48kHz)
 ├── server.js               # Node.js Express, WebSocket & TikTok Live Connector
 └── README.md               # Hướng dẫn chi tiết Anh - Việt
 ```
