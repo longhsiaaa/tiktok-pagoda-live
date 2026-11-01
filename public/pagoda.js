@@ -261,18 +261,100 @@
     playThreeBowsSequence(2050);
   }
 
+  // ========================================================
+  // ANIMATION LẠY PHẬT CHÂN THỰC BẰNG SPRITE KHUNG HÌNH (NGŨ THỂ ĐẦU ĐỊA)
+  // ========================================================
+  /**
+   * Cúi lạy hoặc dập đầu Ngũ Thể Đầu Địa bằng việc đổi frame sprite 3D chân thực
+   * Không dùng co kéo scale dọc gây méo mó hình
+   */
+  function bowDevotee(img, delayMs = 0, isDeep = true) {
+    if (!img || img._isBowing) return;
+    img._isBowing = true;
+
+    setTimeout(() => {
+      img.classList.add('is-bowing');
+      img.src = SPRITE_FRAMES.forehead;
+
+      setTimeout(() => {
+        img.src = SPRITE_FRAMES.bowMid;
+      }, 160);
+
+      if (isDeep) {
+        // Lạy dập đầu Ngũ Thể Đầu Địa (trán, 2 bàn tay, 2 đầu gối chạm đất)
+        setTimeout(() => {
+          img.src = SPRITE_FRAMES.prostrateDeep;
+        }, 360);
+
+        setTimeout(() => {
+          img.src = SPRITE_FRAMES.bowMid;
+        }, 850);
+
+        setTimeout(() => {
+          img.src = SPRITE_FRAMES.forehead;
+        }, 1100);
+
+        setTimeout(() => {
+          img.src = SPRITE_FRAMES.kneel;
+          img.classList.remove('is-bowing');
+          img._isBowing = false;
+        }, 1300);
+      } else {
+        // Cúi gập đầu niệm Phật trang nghiêm
+        setTimeout(() => {
+          img.src = SPRITE_FRAMES.forehead;
+        }, 580);
+
+        setTimeout(() => {
+          img.src = SPRITE_FRAMES.kneel;
+          img.classList.remove('is-bowing');
+          img._isBowing = false;
+        }, 880);
+      }
+    }, delayMs);
+  }
+
   // Đợt sóng cúi lạy của hội chúng hai bên và hàng VIP
   function triggerCongregationWave() {
-    const figures = document.querySelectorAll('.regular-figure, .vip-avatar-figure');
-    figures.forEach((el, idx) => {
-      const delay = (idx % 6) * 90;
-      setTimeout(() => {
-        el.classList.add('bowing-wave');
-        setTimeout(() => {
-          el.classList.remove('bowing-wave');
-        }, 1400);
-      }, delay);
+    // 1. Hàng VIP Thượng Điện cúi lạy trang nghiêm
+    const vipSprites = document.querySelectorAll('.vip-devotee-sprite');
+    vipSprites.forEach((img, idx) => {
+      const delay = (idx % 3) * 90;
+      bowDevotee(img, delay, true);
     });
+
+    // 2. Hai bên đạo tràng lan toả đợt sóng lạy theo hàng
+    const devotees = document.querySelectorAll('.congregation-devotee-sprite');
+    devotees.forEach((img, idx) => {
+      const row = Math.floor(idx / 3);
+      const col = idx % 3;
+      const delay = (row * 85) + (col * 30) + Math.floor(Math.random() * 40);
+      bowDevotee(img, delay, true);
+    });
+  }
+
+  // Vòng lặp tự nhiên khi rảnh: Cứ mỗi 4.2s có 2-4 Phật tử ngẫu nhiên cúi lạy niệm Phật
+  let idleDevotionInterval = null;
+  function startIdleDevotionLoop() {
+    if (idleDevotionInterval) clearInterval(idleDevotionInterval);
+    idleDevotionInterval = setInterval(() => {
+      const allSprites = Array.from(document.querySelectorAll('.congregation-devotee-sprite, .vip-devotee-sprite'));
+      if (allSprites.length === 0) return;
+
+      const candidates = allSprites.filter(img => !img._isBowing);
+      if (candidates.length === 0) return;
+
+      const count = Math.min(candidates.length, 2 + Math.floor(Math.random() * 3));
+      for (let i = 0; i < count; i++) {
+        const randIdx = Math.floor(Math.random() * candidates.length);
+        const chosen = candidates.splice(randIdx, 1)[0];
+        if (chosen) {
+          const delay = Math.floor(Math.random() * 400);
+          const isDeep = Math.random() > 0.45;
+          bowDevotee(chosen, delay, isDeep);
+        }
+      }
+    }, 4200);
   }
 
   // ========================================================
@@ -296,9 +378,9 @@
       slot.id = `vip-seat-${idx}`;
       const delay = (Math.random() * 3.5).toFixed(2);
       const dur = (3.2 + Math.random() * 1.2).toFixed(2);
-      const breatheHeight = (-(1.8 + Math.random() * 1.5)).toFixed(1);
+      const breatheHeight = (-(1.4 + Math.random() * 0.8)).toFixed(1);
       slot.innerHTML = `
-        <div class="vip-avatar-figure" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px"></div>
+        <img class="vip-devotee-sprite" id="vip-devotee-${idx}" src="${SPRITE_FRAMES.kneel}" alt="VIP" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px" />
         <div class="vip-pillow"></div>
         <span class="vip-name-tag">${escapeHtml(d.name)}</span>
       `;
@@ -318,7 +400,7 @@
     if (!congregationGrid) return;
     congregationGrid.innerHTML = '';
 
-    // Cột bên trái
+    // Cột bên trái (3 cột x 5 hàng = 15 Phật tử)
     const leftSide = document.createElement('div');
     leftSide.className = 'congregation-side side-left';
     for (let i = 0; i < 15; i++) {
@@ -328,16 +410,16 @@
       slot.id = `pilgrim-l-${i}`;
       const delay = (Math.random() * 3.5).toFixed(2);
       const dur = (3.0 + Math.random() * 1.2).toFixed(2);
-      const breatheHeight = (-(1.5 + Math.random() * 1.5)).toFixed(1);
+      const breatheHeight = (-(1.2 + Math.random() * 0.8)).toFixed(1);
       slot.innerHTML = `
-        <div class="regular-figure" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px"></div>
+        <img class="congregation-devotee-sprite" id="congregation-devotee-l-${i}" src="${SPRITE_FRAMES.kneel}" alt="Phật tử" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px" />
         <div class="regular-cushion"></div>
         <span class="regular-name-tag">${escapeHtml(name)}</span>
       `;
       leftSide.appendChild(slot);
     }
 
-    // Cột bên phải
+    // Cột bên phải (3 cột x 5 hàng = 15 Phật tử)
     const rightSide = document.createElement('div');
     rightSide.className = 'congregation-side side-right';
     for (let i = 15; i < 30; i++) {
@@ -347,9 +429,9 @@
       slot.id = `pilgrim-r-${i}`;
       const delay = (Math.random() * 3.5).toFixed(2);
       const dur = (3.0 + Math.random() * 1.2).toFixed(2);
-      const breatheHeight = (-(1.5 + Math.random() * 1.5)).toFixed(1);
+      const breatheHeight = (-(1.2 + Math.random() * 0.8)).toFixed(1);
       slot.innerHTML = `
-        <div class="regular-figure" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px"></div>
+        <img class="congregation-devotee-sprite" id="congregation-devotee-r-${i}" src="${SPRITE_FRAMES.kneel}" alt="Phật tử" style="animation-delay: -${delay}s; animation-duration: ${dur}s; --breathe-h: ${breatheHeight}px" />
         <div class="regular-cushion"></div>
         <span class="regular-name-tag">${escapeHtml(name)}</span>
       `;
@@ -1226,5 +1308,6 @@
   setupEventListeners();
   initWebSocket();
   startSimulatorLoop();
+  startIdleDevotionLoop();
 
 })();
